@@ -27,7 +27,7 @@ library(AMR)
 rm(list = ls()) #potentially add other demographics like social class
 evals_dir = "../results/"
 survey_dir = "../data/processed/"
-data = "bigfive"
+data = "bigfive" # change for all respective surveys
 
 results_path = paste(evals_dir, data, ".csv", sep="") #chatGPT
 survey_path = paste(survey_dir, data, "_cleaned", ".csv", sep="") #chatGPT
