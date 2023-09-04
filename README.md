@@ -1,2 +1,25 @@
-# biased_ai
-Repositoy for the "Against GPTology" project
+# Against GPTology
+This is the repositoy for the "Against GPTology" project. All code and data necessary to replicate the analysis in the paper are presented here/
+
+## Overview
+### Code
+
+### Data Files
+
+## Instructions
+### Text Annotations
+First, ...
+Second, ...
+
+### Survey Responses
+First, ...
+Second, ...
+
+### Prompt Sensitivity
+First, ...
+Second, ...
+
+### Open-Source Pipeline
+First, ...
+Second, ...
+
