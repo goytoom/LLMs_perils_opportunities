@@ -1,0 +1,354 @@
+---
+title: "survey_analyses"
+author: "Suhaib Abdurahman"
+date: "2023-06-14"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=F, error=F}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(misty)
+library(data.table)
+library(rstatix)
+library(car)
+library(Hmisc)
+library(sjPlot)
+library(DescTools)
+library(ggrain)
+library(jtools)
+library(modelsummary)
+library(AMR)
+```
+
+## Import Response Data
+
+```{r}
+rm(list = ls()) #potentially add other demographics like social class
+evals_dir = "../results/"
+survey_dir = "../data/processed/"
+data = "closure"
+
+llama_path = paste(evals_dir, data, "_llama2.csv", sep="") #llama
+gpt_path = paste(evals_dir, data, ".csv", sep="") #gpt3.5
+survey_path = paste(survey_dir, data, "_cleaned", ".csv", sep="") #humans
+
+df_llama <- read.csv(llama_path) # load predictions
+df_gpt <- read.csv(gpt_path) # load predictions
+df_human <- read.csv(survey_path) # load human responses
+print(nrow(df_human))
+      
+n_items = nrow(df_llama)
+max_val = max(df_human[1])
+min_val = min(df_human[1])
+
+# rename races
+df_human[df_human$race=="Asian or Asian American", "race"] = "Asian"
+df_human[df_human$race=="Black or African American", "race"] = "Black"
+df_human[df_human$race=="White or European American", "race"] = "White"
+df_human[df_human$race=="American Indian or Alaska Native", "race"] = "Native American"
+df_human[df_human$race=="Middle Eastern or North African", "race"] = "MENA"
+df_human[df_human$race=="Native Hawaiian or Pacific Islander", "race"] = "Pacific Islander"
+df_human[df_human$race=="Hispanic or Latino/Latinx", "race"] = "Hispanic"
+df_human[df_human$race=="other", "race"] = "Other"
+df_human[df_human$religion=="other", "religion"] = "Other"
+df_human[df_human$religion=="Nonreligious: agnostic", "religion"] = "Agnostic"
+df_human[df_human$religion=="Nonreligious: atheist", "religion"] = "Atheist"
+```
+
+## Constructs and reverse coding schemes
+```{r}
+# big5: five constructs
+if(data=="bigfive"){
+reverse_code = c(6,21,31,2,12,27,37,8,18,23,43,9,24,34,35,41)
+constructs = list(Extraversion = c(1, 6, 11, 16, 21, 26, 31, 36), Agreeableness = c(2, 7, 12, 17, 22, 27, 32, 37, 42), Conscientiousness = c(3, 8, 13, 18, 23, 28, 33, 38, 43), Neuroticism = c(4, 9, 14, 19, 24, 29, 34, 39), Openness = c(5, 10, 15, 20, 25, 30, 35, 40, 41, 44))
+}else if(data=="rwa"){
+  constructs = list(RWA = 1:15)
+  reverse_code = c(2,4,6,8,10,12,14)
+}else if(data=="closure"){
+  constructs =  list(nfcc = c(1:2,4:11,13:n_items))
+  reverse_code = c()
+}else if(data=="cognition"){
+  constructs = list(NFC=c(1:n_items))
+  reverse_code = c(3,4,5,7,8,9,12,16,17)
+}else if(data=="systems_feelings"){
+  constructs =  list(Systemizing = c(1:20), Emphasizing = c(21:40))
+  reverse_code = c(7,9,13,14,20,22,24,25,26,27,28,29,31,35,36,37,38,39)
+}else if(data=="cogref"){
+  constructs =  list(Rational = 1:20, Experiential = 21:40)
+  reverse_code = c(1,2,4,5,7,8,9,11,12,18,22,29,30,32,33,34,36,37,40)
+}else if(data=="mfq2"){
+  constructs =  list(Care = 1:6, Equality = 7:12 , Proportionality = 13:18, Loyalty = 19:24, Authority = 25:30, Purity = 31:36)
+  reverse_code = c()
+}
+```
+
+
+## Functions
+### Calculate construct scores
+```{r}
+newCols <- function(df, colList, mode){
+  if(mode=="llama"){
+     for(col in names(colList)){
+       values = colMeans(df[colList[[col]],3:ncols], na.rm = TRUE)
+        df[nrow(df) + 1,] = c(id = 0, item_text=0, values)
+        df[nrow(df), 1:2] = c(col, col)
+    }
+  }else{
+   for(col in names(colList)){
+    df[col] = rowMeans(df[colList[[col]]])
+  }
+}
+ 
+  return(df)
+}
+
+### Create demographic groups
+assignGroups <- function(df, varname){
+  #skip these groups (not relevant for discussion)
+  if(varname=="religion"){
+    black_list = c("Other")
+  }else if(varname=="political_opinion"){
+    black_list = c("Something else")
+  }else if(varname=="race"){
+    black_list = c("Other")
+  }else{
+    black_list = c()
+  }
+  
+  if(varname=="age"){
+    df_humans_r[, "age"] = age_groups(df_humans_r[, "age"], split_at = c(18, 25, 35, 55, 75), na.rm = FALSE)
+  }else{
+  }
+  
+  value_list = unique(df_humans_r[, varname])
+  value_list = value_list[! value_list %in% black_list]
+  
+  df["group"] = "human"
+  for(value in value_list){
+    df[df_humans_r[, varname]==value, "group"] = value
+    if(sum(df_humans_r[, varname]==value)<100){
+      df[df_humans_r[, varname]==value, "group"] = "human"
+    }
+  }
+  
+  df = df[df$group!="human",] #drop groups that were not assigned (e.g., sample size too low)
+  
+  return(df)
+}
+```
+
+
+## Process Data
+
+```{r}
+####### LLAMA
+ncols = ncol(df_llama) # transform to numeric
+df_llama2 <- df_llama %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+
+if(length(reverse_code)!=0){
+df_llama2[reverse_code, 3:ncols] = apply(df_llama2[reverse_code, 3:ncols], 2, item.reverse, min=min_val, max=max_val)
+}
+df_llama2 = newCols(df_llama2, constructs, "llama") # create construct scores
+
+# get average responses across all repeats
+llama_avg <- rowMeans(df_llama2[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_llama2)))
+
+####### GPT
+ncols = ncol(df_gpt) # transform to numeric
+df_gpt2 <- df_gpt %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+
+if(length(reverse_code)!=0){
+df_gpt2[reverse_code, 3:ncols] = apply(df_gpt2[reverse_code, 3:ncols], 2, item.reverse, min=min_val, max=max_val)
+}
+df_gpt2 = newCols(df_gpt2, constructs, "llama") # create construct scores
+
+# get average responses across all repeats
+gpt_avg <- rowMeans(df_gpt2[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_gpt2)))
+
+####### HUMANS
+df_humans_r = df_human
+if(length(reverse_code)!=0){
+df_humans_r[, reverse_code] = apply(df_human[, reverse_code], 2, item.reverse, min=min_val, max=max_val)
+}
+df_humans_r[df_humans_r$political_opinion=="Moderate, middle of the road", "political_opinion"] = "Moderate"
+
+# get construct scores
+df_humans_r = newCols(df_humans_r, constructs, "humans")
+
+# get difference of humans and llama on items
+df_diff = df_humans_r
+df_diff[, 1:(length(llama_avg) - length(constructs))] = abs(df_diff[, 1:(length(llama_avg) - length(constructs))] - llama_avg[1:(length(llama_avg)-5)])
+
+# get difference of humans and llama on constructs
+df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] = abs(df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] - llama_avg[(length(llama_avg)-length(constructs)+1):length(llama_avg)])
+
+# get cumulative deviation on item and construct level
+df_diff <- df_diff %>% mutate(cum_diff = rowSums(select(., contains(data))))
+df_diff <- df_diff %>% mutate(cum_diff_cnstr = rowSums(select(., names(constructs))))
+
+print(length(unique(df_diff$currentCountry)))
+```
+
+## Statistical Analyses
+```{r}
+groupComparisons <- function(df, varnames){
+
+  for(varname in varnames){
+    human_cnstr = df
+    print(varname)
+    human_cnstr <- assignGroups(human_cnstr, varname)
+    llama_cnstr["group"] = "LLAMA"
+    gpt_cnstr["group"] = "GPT"
+    df_desc = rbind(human_cnstr, llama_cnstr, gpt_cnstr)
+    df_desc$group <- factor(df_desc$group, levels = c('LLAMA', "GPT", unique(human_cnstr$group)))
+    
+    # human_cnstr_avg <- human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+    human_cnstr_sd = human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) sd(x, na.rm = TRUE)))
+    
+    if(length(constructs)>1){
+      # llama_cnstr_avg = colMeans(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
+      llama_cnstr_sd = sapply(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], sd, na.rm = TRUE)
+      gpt_cnstr_sd = sapply(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], sd, na.rm = TRUE)
+    }else{
+      # llama_cnstr_avg = mean(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
+      llama_cnstr_sd = sd(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
+      gpt_cnstr_sd = sd(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+    }
+    # 
+    # # differences of means on all constructs
+    # diff_avg = human_cnstr_avg
+    # diff_avg[,names(constructs)] = sweep(human_cnstr_avg[,names(constructs)], 2, llama_cnstr_avg)
+    
+    #Dunnet, are group means different from LLaMa?
+    if(nrow(human_cnstr)>0){
+    for(col in colnames(df_desc)){
+      if(col != "group"){
+        f = as.formula(paste(col, "~ group", collapse = ""))
+        # model <- aov(f, data = df_desc)
+        # print(summary(model))
+        print(col)
+        print(DunnettTest(f, data = df_desc, control = "LLAMA"))
+      }
+    }
+    print("Bonferroni corrected p-value:")
+    print(0.05/length(constructs))
+    
+    # calculate difference of variance for LLama vs demographic groups and GPT
+    diff_sd = human_cnstr_sd
+    diff_sd[,names(constructs)] = sweep(human_cnstr_sd[,names(constructs)], 2, llama_cnstr_sd)
+    diff_sd_models = gpt_cnstr_sd - llama_cnstr_sd
+    diff_sd_models = c("GPT", diff_sd_models)
+    names(diff_sd_models) <- c("group", names(constructs))
+    diff_sd = rbind(diff_sd, diff_sd_models)
+    
+  
+    # test differences of variance on all constructs (p values)
+    for(g in unique(df_desc$group)){
+      if(g!="LLAMA"){
+        df1 = df_desc %>% filter(group==g | group=="LLAMA") %>% select(names(constructs))
+        df2 = df_desc %>% filter(group==g | group=="LLAMA")
+        print(g)
+        print(apply(df1,2,function(x) 
+      {leveneTest(x ~ as.factor(df2$group))[1,3]}))
+      }
+    }
+    print("Bonferroni corrected p-value:")
+    print(0.05/length(unique(df_desc$group))/length(constructs))
+    print(diff_sd)
+    
+    desc_cols = colnames(df_desc)
+    desc_cols = desc_cols[1:length(desc_cols)-1]
+    df_comparison <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE)
+    
+    t1 <- ggplot(df_comparison, aes(x = construct, y = value, fill = group)) +
+      PupillometryR::geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .2, y = 0), adjust = 1.5, trim = FALSE, alpha = .3, colour = NA)+
+      geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.05, height=0.075, x = -.25, nudge.from = "jittered"), size = 1, shape = 20)+
+      geom_boxplot(aes(x = construct, y = value, fill = group),outlier.shape = NA, lwd=.1, alpha = .5, width = .35, colour = "black")+
+      scale_colour_brewer(palette = "Set1")+ scale_fill_brewer(palette = "Set1")+ xlab("") + ylab("Construct Score") + theme_apa(y.font.size=11)
+    
+    print(t1)
+    
+    ggsave(filename = paste("../results/plots/llama/", data, "_", varname, "_llama.png", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='png')
+    
+    print("---------------------------------------------------")
+    }else{
+    print("Not enough data for any demographic group")
+    }
+  }
+  
+  return(list(df_desc, df_comparison))
+  
+}
+```
+
+
+
+### Demographic Group Differences
+```{r}
+# get construct values
+human_cnstr = data.frame(df_humans_r[, (ncol(df_humans_r)-length(constructs)+1):(ncol(df_humans_r))])
+colnames(human_cnstr) = names(constructs)
+llama_cnstr = transpose(df_llama2[(length(llama_avg)-length(constructs)+1):length(llama_avg),3:ncols])
+colnames(llama_cnstr) <- names(constructs)
+gpt_cnstr = transpose(df_gpt2[(length(gpt_avg)-length(constructs)+1):length(gpt_avg),3:ncols])
+colnames(gpt_cnstr) <- names(constructs)
+
+### Vars: sex, age, race, religion, political_opinion
+# divide human participants in demographic groups
+# varname = "age"
+df_list = groupComparisons(human_cnstr, c("age", "sex", "race", "religion", "political_opinion"))
+df_desc <- df_list[[1]]
+df_comparison <- df_list[[2]]
+```
+
+### Inferential Analysis
+
+```{r}
+## potentially remove groups that have too few samples (for categorical variables)
+df_diff$political_opinion <- relevel(factor(df_diff$political_opinion), ref = "Conservative")
+df_diff$religion <- relevel(factor(df_diff$religion), ref = "Christianity")
+df_diff$race <- relevel(factor(df_diff$race), ref = "White")
+
+# test different models
+lm_demo_cnstr <- lm(cum_diff_cnstr ~ age + sex + political_opinion + religion + race, df_diff) 
+```
+
+### Results
+
+```{r}
+# variables reference at 0 not average
+summary(lm_demo_cnstr)
+```
+
+
+## Plots
+
+```{r}
+desc_cols = colnames(df_desc)
+desc_cols = desc_cols[1:length(desc_cols)-1]
+df_plot <- df_comparison %>% group_by(construct, group) %>% summarise(mean = mean(value), se = sd(value)/sqrt(n()))
+df_plot_var <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE) %>% group_by(construct, group) %>% summarise(mean = mean(value), se = sd(value)/sqrt(n()), variance = var(value), ymax = ((n()-1)*var(value))/qchisq(0.025,n()-1), ymin=((n()-1)*var(value))/qchisq(0.975,n()-1))
+
+# rename categories
+vars = c("age", "sexMale", "political_opinionLiberal", "political_opinionModerate", "religionIslam", "religionJudaism", "religionNonreligious: atheist", "religionNonreligious: agnostic", "religionHinduism", "religionBuddhism",
+                                                  "raceBlack", "raceAsian", "raceHispanic", "raceMENA", "raceNative American", "raceOther")
+# rename for estimates plots
+coefmaps = c("age" = "Age", "sexMale" = "Sex (Male)", "political_opinionLiberal" = "Political Opinion (Liberal)", "political_opinionModerate"  = "Political Opinion (Moderate)", "religionIslam" = "Religion (Islam)", "religionJudaism" = "Religion (Judaism)", "religionNonreligious: atheist"  = "Religion (Atheism)", "religionNonreligious: agnostic"  = "Religion (Agnostic)", "religionHinduism" = "Religion (Hinduism)", "religionBuddhism" = "Religion (Buddhism)", "raceBlack" = "Race (Black)", "raceAsian" = "Race (Asian)", "raceHispanic" = "Race (Latino)", "raceMENA" = "Race (MENA)", "raceNative American" = "Race (Native American)", "raceOther" = "Race (Other)")
+
+# format plots
+b <- list(geom_vline(xintercept = 0, color = 'orange'))
+est <- modelplot(lm_demo_cnstr, type = "est", terms = vars, coef_map = coefmaps, background = b) + theme_apa() 
+est
+
+#save plot
+ggsave(filename = paste("../results/plots/llama/", data, "_bias_estimates_llama.png", sep=""), est, width = 8, height = 4, dpi = 150, units = "in", device='png')
+```
+
+
+
+
+
+

@@ -1,0 +1,545 @@
+---
+title: "survey_analyses"
+author: "Suhaib Abdurahman"
+date: "2023-06-14"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=F, error=F}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(misty)
+library(data.table)
+library(rstatix)
+library(car)
+library(Hmisc)
+libraries(sjPlot)
+library(DescTools)
+library(ggrain)
+library(jtools)
+```
+
+## Import Response Data
+
+```{r}
+rm(list = ls())
+evals_dir = "../results/"
+survey_dir = "../data/processed/"
+data = "bigfive"
+alt = "Response Rescaling"
+# alts = c("Added Context", "Response Rescaling", "ALT4")
+
+alt_path1 = paste(evals_dir, data, "_", "Added Context", ".csv", sep="") #chatGPT
+alt_path2 = paste(evals_dir, data, "_", "Response Rescaling", ".csv", sep="") #chatGPT
+alt_path3 = paste(evals_dir, data, "_", "ALT4", ".csv", sep="") #chatGPT
+original_path = paste(evals_dir, data, ".csv", sep="")
+survey_path = paste(survey_dir, data, "_cleaned", ".csv", sep="") #chatGPT
+
+df_gpt <- read.csv(original_path) # load predictions
+df_gpt <- df_gpt %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+order_idx = df_gpt$id
+
+df_gpt_alt1 <- read.csv(alt_path1) %>% slice(match(order_idx, id)) # load predictions in correct order
+df_gpt_alt1 <- df_gpt_alt1 %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+
+df_gpt_alt2 <- read.csv(alt_path2) %>% slice(match(order_idx, id)) # load predictions in correct order
+df_gpt_alt2 <- df_gpt_alt2 %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+
+df_gpt_alt3 <- read.csv(alt_path3) %>% slice(match(order_idx, id)) # load predictions in correct order
+df_gpt_alt3 <- df_gpt_alt3 %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+
+df_human <- read.csv(survey_path) # load human responses
+print(nrow(df_human))
+
+# get scale endpoints for groundtruth and each alternative prompt
+n_items = nrow(df_gpt)
+max_val = max(df_human[1])
+min_val = min(df_human[1])
+
+max_val1 = max(df_gpt_alt1[3], na.rm = T)
+min_val1 = min(df_gpt_alt1[3], na.rm = T)
+
+max_val2 = max(df_gpt_alt2[3], na.rm = T)
+min_val2 = min(df_gpt_alt2[3], na.rm = T)
+
+max_val3 = max(df_gpt_alt3[3], na.rm = T)
+min_val3 = min(df_gpt_alt3[3], na.rm = T)
+```
+
+
+## Constructs and reverse coding schemes
+```{r}
+# big5: five constructs
+if(data=="bigfive"){
+reverse_code = c(6,21,31,2,12,27,37,8,18,23,43,9,24,34,35,41)
+constructs = list(Extraversion = c(1, 6, 11, 16, 21, 26, 31, 36), Agreeableness = c(2, 7, 12, 17, 22, 27, 32, 37, 42), Conscientiousness = c(3, 8, 13, 18, 23, 28, 33, 38, 43), Neuroticism = c(4, 9, 14, 19, 24, 29, 34, 39), Openness = c(5, 10, 15, 20, 25, 30, 35, 40, 41, 44))
+}else if(data=="rwa"){
+  constructs = list(RWA = 1:15)
+  reverse_code = c(2,4,6,8,10,12,14)
+}else if(data=="closure"){
+  constructs =  list(nfcc = c(1:2,4:11,13:n_items))
+  reverse_code = c()
+}else if(data=="cognition"){
+  constructs = list(NFC=c(1:n_items))
+  reverse_code = c(3,4,5,7,8,9,12,16,17)
+}else if(data=="systems_feelings"){
+  constructs =  list(Systemizing = c(1:20), Emphasizing = c(21:40))
+  reverse_code = c(7,9,13,14,20,22,24,25,26,27,28,29,31,35,36,37,38,39)
+}else if(data=="cogref"){
+  constructs =  list(Rational = 1:20, Experiential = 21:40)
+  reverse_code = c(1,2,4,5,7,8,9,11,12,18,22,29,30,32,33,34,36,37,40)
+}else if(data=="mfq2"){
+  constructs =  list(Care = 1:6, Equality = 7:12 , Proportionality = 13:18, Loyalty = 19:24, Authority = 25:30, Purity = 31:36)
+  reverse_code = c()
+}
+```
+
+
+## Functions
+
+```{r}
+newCols <- function(df, colList, mode){
+  if(mode=="gpt"){
+     for(col in names(colList)){
+       values = colMeans(df[colList[[col]],3:ncols], na.rm = TRUE)
+        df[nrow(df) + 1,] = c(id = 0, item_text=0, values)
+        df[nrow(df), 1:2] = c(col, col)
+    }
+  }else{
+   for(col in names(colList)){
+    df[col] = rowMeans(df[colList[[col]]])
+  }
+}
+ 
+  return(df)
+}
+```
+
+## Preprocess Data
+
+```{r}
+####### GPT
+ncols = ncol(df_gpt)
+
+# transform to numeric
+df_gpt2 = df_gpt
+if(length(reverse_code)!=0){
+df_gpt2[reverse_code, 3:ncols] = apply(df_gpt[reverse_code, 3:ncols], 2, item.reverse, min=min_val, max=max_val)
+}
+
+# create construct scores
+df_gpt2 = newCols(df_gpt2, constructs, "gpt")
+
+# get average responses across all repeats
+gpt_avg <- rowMeans(df_gpt2[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_gpt)))
+
+####### GPT Added Context
+# transform to numeric
+df_gpt_alt12 = df_gpt_alt1
+if(length(reverse_code)!=0){
+df_gpt_alt12[reverse_code, 3:ncols] = apply(df_gpt_alt1[reverse_code, 3:ncols], 2, item.reverse, min=min_val1, max=max_val1)
+}
+
+# create construct scores
+df_gpt_alt12 = newCols(df_gpt_alt12, constructs, "gpt")
+
+# get average responses across all repeats
+gpt_alt_avg1 <- rowMeans(df_gpt_alt12[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_gpt_alt1)))
+
+####### GPT Response Rescaling
+# transform to numeric
+df_gpt_alt22 = df_gpt_alt2
+if(length(reverse_code)!=0){
+df_gpt_alt22[reverse_code, 3:ncols] = apply(df_gpt_alt2[reverse_code, 3:ncols], 2, item.reverse, min=min_val2, max=max_val2)
+}
+
+# create construct scores
+df_gpt_alt22 = newCols(df_gpt_alt22, constructs, "gpt")
+
+# get average responses across all repeats
+gpt_alt_avg2 <- rowMeans(df_gpt_alt22[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_gpt_alt2)))
+
+####### GPT Semantic Changes
+# transform to numeric
+df_gpt_alt32 = df_gpt_alt3
+if(length(reverse_code)!=0){
+df_gpt_alt32[reverse_code, 3:ncols] = apply(df_gpt_alt3[reverse_code, 3:ncols], 2, item.reverse, min=min_val3, max=max_val3)
+}
+
+# create construct scores
+df_gpt_alt32 = newCols(df_gpt_alt32, constructs, "gpt")
+
+# get average responses across all repeats
+gpt_alt_avg3 <- rowMeans(df_gpt_alt32[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_gpt_alt3)))
+```
+
+### Compare Average and Variance
+
+```{r}
+# ORIGINAL
+gpt_cnstr = transpose(df_gpt2[(length(gpt_avg)-length(constructs)+1):length(gpt_avg),3:ncols])
+colnames(gpt_cnstr) <- names(constructs)
+# Added Context
+gpt_cnstr1 = transpose(df_gpt_alt12[(length(gpt_alt_avg1)-length(constructs)+1):length(gpt_alt_avg1),3:ncols])
+colnames(gpt_cnstr1) <- names(constructs)
+# Added Context
+gpt_cnstr2 = transpose(df_gpt_alt22[(length(gpt_alt_avg2)-length(constructs)+1):length(gpt_alt_avg2),3:ncols])
+colnames(gpt_cnstr2) <- names(constructs)
+# Added Context
+gpt_cnstr3 = transpose(df_gpt_alt32[(length(gpt_alt_avg3)-length(constructs)+1):length(gpt_alt_avg3),3:ncols])
+colnames(gpt_cnstr3) <- names(constructs)
+
+## automatically split groups from 2-n, leave 1 as "other"
+### Vars: sex, age, race, religion, political_opinion
+### write function: takes in data and variable name -> assigns each unique variable value a unique group
+
+varname = "political_opinion"
+gpt_cnstr["group"] = "Original Prompt"
+gpt_cnstr1["group"] = "Added Context"
+gpt_cnstr2["group"] = "Response Rescaling"
+gpt_cnstr3 = gpt_cnstr3 - max_val3  + max_val #adjust differences in scale values
+gpt_cnstr3["group"] = "Semantic Changes"
+
+df_desc = rbind(gpt_cnstr, gpt_cnstr1, gpt_cnstr2, gpt_cnstr3)
+df_desc$group <- factor(df_desc$group, levels = c('Original Prompt', "Added Context", "Response Rescaling", "Semantic Changes"))
+
+if(length(constructs)>1){
+  gpt_cnstr_avg = colMeans(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd = sapply(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], sd, na.rm = TRUE)
+  gpt_cnstr_avg1 = colMeans(gpt_cnstr1[, !(names(gpt_cnstr1) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd1 = sapply(gpt_cnstr1[, !(names(gpt_cnstr1) %in% c("group"))], sd, na.rm = TRUE)
+  gpt_cnstr_avg2 = colMeans(gpt_cnstr2[, !(names(gpt_cnstr2) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd2 = sapply(gpt_cnstr2[, !(names(gpt_cnstr2) %in% c("group"))], sd, na.rm = TRUE)
+  gpt_cnstr_avg3 = colMeans(gpt_cnstr3[, !(names(gpt_cnstr3) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd3 = sapply(gpt_cnstr3[, !(names(gpt_cnstr3) %in% c("group"))], sd, na.rm = TRUE)
+}else{
+  gpt_cnstr_avg = mean(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd = sd(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_avg1 = mean(gpt_cnstr1[, !(names(gpt_cnstr1) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd1 = sd(gpt_cnstr1[, !(names(gpt_cnstr1) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_avg2 = mean(gpt_cnstr2[, !(names(gpt_cnstr2) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd2 = sd(gpt_cnstr2[, !(names(gpt_cnstr2) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_avg3 = mean(gpt_cnstr3[, !(names(gpt_cnstr3) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd3 = sd(gpt_cnstr3[, !(names(gpt_cnstr3) %in% c("group"))], na.rm = TRUE)
+}
+
+
+## Test group differences
+# test differences of means on all constructs
+# shows effect of variable on probability for human => positive means humans have higher mean
+diff_avg = data.frame(t(gpt_cnstr_avg), row.names = c("Original Prompt"))
+diff_avg["Added Context",] = diff_avg["Original Prompt",] - gpt_cnstr_avg1
+diff_avg["Response Rescaling",] = diff_avg["Original Prompt",] - gpt_cnstr_avg2
+diff_avg["Semantic Changes",] = diff_avg["Original Prompt",] - gpt_cnstr_avg3
+
+diff_sd = data.frame(t(gpt_cnstr_sd), row.names = c("Original Prompt"))
+diff_sd["Added Context",] = diff_sd["Original Prompt",] - gpt_cnstr_sd1
+diff_sd["Response Rescaling",] = diff_sd["Original Prompt",] - gpt_cnstr_sd2
+diff_sd["Semantic Changes",] = diff_sd["Original Prompt",] - gpt_cnstr_sd3
+
+# print(diff_avg %>% mutate_if(is.numeric, round, 3)) # constr mean diff
+
+#Dunnet, are group means different from chatGPT?
+for(col in colnames(df_desc)){
+  if(col != "group"){
+    f = as.formula(paste(col, "~ group", collapse = ""))
+    model <- aov(f, data = df_desc)
+    print(col)
+    print(DunnettTest(f, data = df_desc, control = "Original Prompt"))
+  }
+}
+
+print(diff_avg)
+print("Bonferroni corrected p-value:")
+print(0.05/length(constructs))
+  
+print("Variance Test")
+# test differences of variance on all constructs
+for(g in unique(df_desc$group)){
+  if(g!="Original Prompt"){
+    df1 = df_desc %>% filter(group==g | group=="Original Prompt") %>% select(names(constructs))
+    df2 = df_desc %>% filter(group==g | group=="Original Prompt")
+    print(g)
+    print(apply(df1,2,function(x) 
+  {leveneTest(x ~ as.factor(df2$group))[1,3]}))
+  }
+}
+
+print(diff_sd)
+print("Bonferroni corrected p-value:")
+print(0.05/length(unique(df_desc$group))/length(constructs))
+
+desc_cols = colnames(df_desc)
+desc_cols = desc_cols[1:length(desc_cols)-1]
+df_comparison <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE)
+
+t1 <- ggplot(df_comparison, aes(x = construct, y = value, fill = group)) +
+      PupillometryR::geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .2, y = 0), adjust = 1.5, trim = FALSE, alpha = .3, colour = NA)+
+      geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.05, height=0.075, x = -.25, nudge.from = "jittered"), size = 1, shape = 20)+
+      geom_boxplot(aes(x = construct, y = value, fill = group),outlier.shape = NA, lwd=.1, alpha = .5, width = .35, colour = "black")+
+      scale_colour_brewer(palette = "Set1")+ scale_fill_brewer(palette = "Set1")+ xlab("") + ylab("Construct Score") + theme_apa(y.font.size=11)
+    
+    print(t1)
+    
+    ggsave(filename = paste("../results/plots/", data, "_prompting.png", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='png')
+```
+
+
+
+
+
+
+## Process Data
+
+```{r}
+####### GPT
+ncols = ncol(df_gpt)
+# transform to numeric
+df_gpt <- df_gpt %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
+df_gpt2 = df_gpt
+if(length(reverse_code)!=0){
+df_gpt2[reverse_code, 3:ncols] = apply(df_gpt[reverse_code, 3:ncols], 2, item.reverse, min=min_val, max=max_val)
+}
+
+# create construct scores
+df_gpt2 = newCols(df_gpt2, constructs, "gpt")
+
+# get average responses across all repeats
+gpt_avg <- rowMeans(df_gpt2[, 3:ncols], na.rm = TRUE)
+print(sum(is.na(df_gpt)))
+
+####### HUMANS
+df_humans_r = df_human
+if(length(reverse_code)!=0){
+df_humans_r[, reverse_code] = apply(df_human[, reverse_code], 2, item.reverse, min=min_val, max=max_val)
+}
+df_humans_r[df_humans_r$political_opinion=="Moderate, middle of the road", "political_opinion"] = "Moderate"
+
+# get construct scores
+df_humans_r = newCols(df_humans_r, constructs, "humans")
+
+# get difference of humans and gpt on items
+df_diff = df_humans_r
+df_diff[, 1:(length(gpt_avg) - length(constructs))] = abs(df_diff[, 1:(length(gpt_avg) - length(constructs))] - gpt_avg[1:(length(gpt_avg)-5)])
+
+# get difference of humans and gpt on constructs
+df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] = abs(df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] - gpt_avg[(length(gpt_avg)-length(constructs)+1):length(gpt_avg)])
+
+# get cumulative deviation on item and construct level
+df_diff <- df_diff %>% mutate(cum_diff = rowSums(select(., contains(data))))
+df_diff <- df_diff %>% mutate(cum_diff_cnstr = rowSums(select(., names(constructs))))
+
+print(length(unique(df_diff$currentCountry)))
+```
+
+## Statistical Analyses
+
+```{r}
+assignGroups <- function(df, varname){
+  #skip these groups (not relevant for discussion)
+  if(varname=="religion"){
+    black_list = c("other")
+  }else if(varname=="political_opinion"){
+    black_list = c("Something else")
+  }else if(varname=="race"){
+    black_list = c("other")
+  }else{
+    black_list = c()
+    
+  }
+  
+  value_list = unique(df_humans_r[, varname])
+  value_list = value_list[! value_list %in% black_list]
+  
+  df["group"] = "human"
+  for(value in value_list){
+    df[df_humans_r[, varname]==value, "group"] = value
+    if(sum(df_humans_r[, varname]==value)<100){
+      df[df_humans_r[, varname]==value, "group"] = "human"
+    }
+  }
+  
+  df = df[df$group!="human",] #drop groups that were not assigned (e.g., sample size too low)
+  
+  return(df)
+}
+```
+
+
+### Descriptive Analysis
+```{r}
+# get mean and variance for each item
+  # for humans and gpt
+# compare both
+## change to function -> run for each variable (output will show diff/variance analyses and violin plots)
+
+# get construct values
+human_cnstr = data.frame(df_humans_r[, (ncol(df_humans_r)-length(constructs)+1):(ncol(df_humans_r))])
+colnames(human_cnstr) = names(constructs)
+gpt_cnstr = transpose(df_gpt2[(length(gpt_avg)-length(constructs)+1):length(gpt_avg),3:ncols])
+colnames(gpt_cnstr) <- names(constructs)
+
+## automatically split groups from 2-n, leave 1 as "other"
+### Vars: sex, age, race, religion, political_opinion
+### write function: takes in data and variable name -> assigns each unique variable value a unique group
+
+varname = "political_opinion"
+human_cnstr <- assignGroups(human_cnstr, varname)
+gpt_cnstr["group"] = "GPT"
+df_desc = rbind(human_cnstr, gpt_cnstr)
+df_desc$group <- factor(df_desc$group, levels = c('GPT', unique(human_cnstr$group)))
+
+human_cnstr_avg <- human_cnstr %>% group_by(group) %>% summarise_all(funs(mean(., na.rm=TRUE)))
+human_cnstr_sd = human_cnstr %>% group_by(group) %>% summarise_all(funs(sd(., na.rm=TRUE)))
+
+if(length(constructs)>1){
+  gpt_cnstr_avg = colMeans(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd = sapply(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], sd, na.rm = TRUE)
+}else{
+  gpt_cnstr_avg = mean(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+  gpt_cnstr_sd = sd(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
+}
+
+## Test group differences
+# test differences of means on all constructs
+diff_avg = human_cnstr_avg
+diff_avg[,names(constructs)] = sweep(human_cnstr_avg[,names(constructs)], 2, gpt_cnstr_avg)
+diff_sd = human_cnstr_sd
+diff_sd[,names(constructs)] = sweep(human_cnstr_sd[,names(constructs)], 2, gpt_cnstr_sd)
+
+
+#Dunnet, are group means different from chatGPT?
+for(col in colnames(df_desc)){
+  if(col != "group"){
+    f = as.formula(paste(col, "~ group", collapse = ""))
+    model <- aov(f, data = df_desc)
+    print(col)
+    print(DunnettTest(f, data = df_desc, control = "GPT"))
+  }
+}
+print("Bonferroni corrected p-value:")
+print(0.05/length(constructs))
+  
+print("Variance Test")
+# test differences of variance on all constructs
+for(g in unique(df_desc$group)){
+  if(g!="GPT"){
+    df1 = df_desc %>% filter(group==g | group=="GPT") %>% select(names(constructs))
+    df2 = df_desc %>% filter(group==g | group=="GPT")
+    print(g)
+    print(apply(df1,2,function(x) 
+  {leveneTest(x ~ as.factor(df2$group))[1,3]}))
+  }
+}
+print("Bonferroni corrected p-value:")
+print(0.05/length(unique(df_desc$group))/length(constructs))
+
+print(diff_sd %>% 
+ mutate_if(is.numeric, round, 3)) # constr mean diff
+
+```
+
+### Plots
+```{r}
+desc_cols = colnames(df_desc)
+desc_cols = desc_cols[1:length(desc_cols)-1]
+df_comparison <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE)
+
+s <- ggplot(data=df_comparison, aes(x=construct, y=value, fill=group)) + 
+  geom_violin(trim = T, position="dodge", alpha=0.5, scale = "width") + stat_summary(fun.y=mean,geom="point", position = position_dodge(width = 0.9), size = 1)  +  stat_summary(fun.data="mean_cl_boot",
+               geom="errorbar", fun.args = list(conf.int=.95),
+               size = 1, width = 0.3,
+               position = position_dodge(width = 0.9)) + xlab("Construct") + ylab("Construct Score") + ggtitle(paste("Distribution of construct scores over", gsub('[[:punct:] ]+',' ',varname), collapse = "")) + theme_apa() + scale_fill_brewer(palette = 'Set1') +
+  scale_color_brewer(palette = 'Set1') + theme(legend.position = "top")
+print(s)
+
+ggplot(df_comparison, aes(x = construct, y = value, fill = group)) +
+  geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .15, y = 0), adjust = 1.5, trim = FALSE, alpha = .5, colour = NA)+
+  geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.1, x = -.25, nudge.from = "jittered"), size = 1, shape = 20)+
+  geom_boxplot(aes(x = construct, y = value, fill = group),outlier.shape = NA, alpha = .5, width = .2, colour = "black")+
+  scale_colour_brewer(palette = "Set1")+
+  scale_fill_brewer(palette = "Set1")+ xlab("") + ylab("Construct Score") +  ggtitle(paste("Distribution of construct scores over", gsub('[[:punct:] ]+',' ', varname), collapse = "")) + theme_apa()
+```
+
+
+
+### Inferential Analysis
+
+```{r}
+## potentially remove groups that have too few samples (for categorical variables)
+df_diff$political_opinion <- relevel(factor(df_diff$political_opinion), ref = "Conservative")
+df_diff$religion <- relevel(factor(df_diff$religion), ref = "Christianity")
+df_diff$race <- relevel(factor(df_diff$race), ref = "White or European American")
+
+# test different models
+lm_demo_items <- lm(cum_diff ~ age + sex + political_opinion + religion + race, df_diff)
+lm_demo_cnstr <- lm(cum_diff_cnstr ~ age + sex + political_opinion + religion + race, df_diff)
+```
+
+### Results
+
+```{r}
+# variables reference at 0 not average
+# summary(lm_demo_items)
+summary(lm_demo_cnstr)
+```
+
+
+## Plots
+
+```{r}
+df_plot <- df_comparison %>% group_by(construct, group) %>% summarise(mean = mean(value), se = sd(value)/sqrt(n()))
+
+df_plot_var <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE) %>% group_by(construct, group) %>% summarise(mean = mean(value), se = sd(value)/sqrt(n()), variance = var(value), ymax = ((n()-1)*var(value))/qchisq(0.025,n()-1), ymin=((n()-1)*var(value))/qchisq(0.975,n()-1))
+
+# p<-ggplot(data=df_plot, aes(x=construct, y=mean, fill=group)) +
+#   geom_bar(position = "dodge", stat = "identity") + 
+#   geom_errorbar(aes(x=construct, ymin=mean-2*se, ymax=mean+2*se), width=0.2, colour="orange", alpha=0.9, size=.6, position=position_dodge(.9))
+# 
+# p
+# 
+# v <-ggplot(data=df_plot_var, aes(x=construct, y=variance, fill=group)) +
+#   geom_bar(position = "dodge", stat = "identity") + 
+#   geom_errorbar(aes(x=construct, ymin=ymin, ymax=ymax), width=0.2, colour="orange", alpha=0.9, size=.6, position=position_dodge(.9))
+# 
+# v
+
+
+# s <- ggplot(data=df_comparison, aes(x=construct, y=value, fill=group)) +
+#   geom_violin(trim = FALSE, position="dodge", alpha=0.5, scale = "width") + stat_summary(fun.y=mean,geom="point", position = position_dodge(width = 0.9), size = 1)  +  stat_summary(fun.data="mean_cl_boot",
+#                geom="errorbar", fun.args = list(conf.int=.95),
+#                size = 1, width = 0.3,
+#                position = position_dodge(width = 0.9)) 
+# s
+
+
+# rename categories
+vars = c("age", "sexMale", "political_opinionLiberal", "political_opinionModerate", "religionIslam", "religionJudaism", "religionNonreligious: atheist", "religionNonreligious: agnostic", "religionHinduism", "religionBuddhism",
+                                                  "raceBlack or African American", "raceAsian or Asian American", "raceHispanic or Latino/Latinx", "raceMiddle Eastern or North African", "raceAmerican Indian or Alaska Native", "raceother")
+coefmaps = c("age" = "Age", "sexMale" = "Sex (Male)", "political_opinionLiberal" = "Political Opinion (Liberal)", "political_opinionModerate"  = "Political Opinion (Moderate)", "religionIslam" = "Religion (Islam)", "religionJudaism" = "Religion (Judaism)", "religionNonreligious: atheist"  = "Religion (Atheism)", "religionNonreligious: agnostic"  = "Religion (Agnostic)", "religionHinduism" = "Religion (Hinduism)", "religionBuddhism" = "Religion (Buddhism)", "raceBlack or African American" = "Race (Black)", "raceAsian or Asian American" = "Race (Black)", "raceHispanic or Latino/Latinx" = "Race (Latino)", "raceMiddle Eastern or North African" = "Race (MENA)", "raceAmerican Indian or Alaska Native" = "Race (Native American)", "raceother" = "Race (Other)")
+
+
+b <- list(geom_vline(xintercept = 0, color = 'orange')
+          #,
+          # annotate("rect", alpha = .1,
+          #          xmin = -.5, xmax = .5, 
+          #          ymin = -Inf, ymax = Inf),
+          # geom_point(aes(y = term, x = estimate), alpha = .3, 
+          #            size = 10, color = 'red')
+          )
+
+modelplot(lm_demo_cnstr, type = "est", terms = vars, coef_map = coefmaps, background = b) + ggtitle("Demographic Bias Estimates") + theme_apa() #+ geom_vline(xintercept=0, linetype="dotted", color="red", 1)
+```
+
+
+
+
+
+
+
+
+
