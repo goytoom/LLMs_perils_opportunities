@@ -1,0 +1,213 @@
+---
+title: "annotations_analyses"
+author: "Suhaib Abdurahman"
+date: "2023-06-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(broom)
+```
+
+## General Parameter
+
+```{r}
+evals_dir = "../results/evals/"
+corp = "mfrc"
+type = "normal"
+mode = "full"
+
+#load original and alt prompt results
+original_path = paste(evals_dir, paste("gpt", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
+```
+
+## Import Data
+
+```{r}
+df <- read.csv(original_path) # load predictions
+if (type != "cross") {
+  df <- df %>% rename(pred_care = care, pred_equality = equality, pred_loyalty = loyalty, pred_authority = authority,
+                    pred_purity = purity, pred_proportionality = proportionality, pred_thin = thin.morality, pred_non = non.moral)
+} else {
+  df <- df %>% rename(pred_care = care, pred_loyalty = loyalty, pred_authority = authority,
+                    pred_purity = purity, pred_non = non.moral)
+}
+
+meta <- read.csv("../data/meta/mfrc_annotators_pv.csv")
+meta <- meta %>% mutate(annotator = paste("annotator", sprintf("%02d", ID), sep = ""))
+# preprocess meta data (age to numeric, etc.)
+
+df <- merge(df, meta, by = "annotator")
+```
+
+## Process Data
+
+```{r}
+df$age <- as.numeric(gsub("([0-9]+).*$", "\\1", df$age))
+```
+
+## Models
+
+```{r}
+lm_general <- glm(as.factor(success) ~ annotator, data = df, 
+                  family = 'binomial')
+
+lm_demo <- glm(as.factor(success) ~ sex + age + religion, 
+               data = df, family = 'binomial')
+
+lm_mfq <- glm(as.factor(success) ~ care + equality + proportionality + 
+                loyalty + authority + purity, data = df, family = 'binomial')
+
+############## psych
+
+lm_psycho <- glm(as.factor(success) ~ open.mindedness + conscientiousness + 
+                   agreeableness + extraversion + 
+                   agreeableness + negative.emotionality, 
+                 data = df, family = 'binomial')
+lm_creative <- glm(as.factor(success) ~ open.mindedness + creative.imagination + 
+                   aesthetic.sensitivity + intellectual.curiosity,
+                 data = df, family = 'binomial')
+lm_mental <- glm(as.factor(success) ~ anxiety + depression + 
+                   emotional.volatility,
+                 data = df, family = 'binomial')
+
+
+############# social factors
+lm_social <- glm(as.factor(success) ~ collectivism + individualism + 
+                   tightness + social_conservatism + 
+                   economical_conservatism, data = df, family = 'binomial')
+
+lm_kindness <- glm(as.factor(success) ~ compassion + trust + 
+                     respectfulness, data = df, family = 'binomial')
+
+lm_productive <- glm(as.factor(success) ~ productiveness + organization + 
+                       responsibility, data = df, family = 'binomial')
+```
+
+
+## Evaluate
+
+```{r}
+summary(lm_general)
+
+summary(lm_demo)
+coef = (round(exp(tidy(lm_demo)$estimate), 2) - 1)*100
+p = round(tidy(lm_demo)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_mfq)
+coef = (round(exp(tidy(lm_mfq)$estimate), 2) - 1)*100
+p = round(tidy(lm_mfq)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_psycho)
+coef = (round(exp(tidy(lm_psycho)$estimate), 2) - 1)*100
+p = round(tidy(lm_psycho)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_creative)
+coef = (round(exp(tidy(lm_creative)$estimate), 2) - 1)*100
+p = round(tidy(lm_creative)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_mental)
+coef = (round(exp(tidy(lm_mental)$estimate), 2) - 1)*100
+p = round(tidy(lm_mental)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_social)
+coef = (round(exp(tidy(lm_social)$estimate), 2) - 1)*100
+p = round(tidy(lm_social)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_kindness)
+coef = (round(exp(tidy(lm_kindness)$estimate), 2) - 1)*100
+p = round(tidy(lm_kindness)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
+summary(lm_productive)
+coef = (round(exp(tidy(lm_productive)$estimate), 2) - 1)*100
+p = round(tidy(lm_productive)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+```
+
+## Compare distributions of predictions (are the prediction skewed?)
+```{r}
+results_path_1 = paste(evals_dir, paste(corp, "success", type, mode, sep="_"), ".csv", sep="") #bert
+results_path_2 = paste(evals_dir, paste("gpt", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
+results_path_gt = paste("../data/preprocessed/", paste(corp, "sample", mode, sep="_"), ".csv", sep = "")
+  
+df1 <- read.csv(results_path_1) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE) # load predictions
+df2 <- read.csv(results_path_2) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
+df_groundtruth <- read.csv(results_path_gt)
+```
+
+## Process data
+```{r}
+df1$group = "BERT"
+df2$group = "chatGPT"
+df_groundtruth$group = "TRUE"
+
+df_total = rbind(df1,df2, df_groundtruth)
+df_total$group <- relevel(as.factor(df_total$group), ref = "TRUE")
+```
+
+## Fit Model (moral foundation ~ predictor)
+```{r}
+lm_care <- glm(care ~ group, data = df_total, family = "binomial")
+summary(lm_care)
+
+lm_equal <- glm(equality ~ group, data = df_total, family = "binomial")
+summary(lm_equal)
+
+lm_prop <- glm(proportionality ~ group, data = df_total, family = "binomial")
+summary(lm_prop)
+
+lm_loyalty <- glm(loyalty ~ group, data = df_total, family = "binomial")
+summary(lm_loyalty)
+
+lm_authority <- glm(authority ~ group, data = df_total, family = "binomial")
+summary(lm_authority)
+
+lm_purity <- glm(purity ~ group, data = df_total, family = "binomial")
+summary(lm_purity)
+
+lm_thin <- glm(`thin.morality` ~ group, data = df_total, family = "binomial")
+summary(lm_thin)
+
+lm_nonmoral <- glm(`non.moral` ~ group, data = df_total, family = "binomial")
+summary(lm_nonmoral)
+```
+
+## Extract Coefficients
+
+```{r}
+list_models = list(lm_care, lm_equal, lm_prop, lm_authority, lm_loyalty, lm_purity, lm_thin, lm_nonmoral)
+list_names = list("care", "equality", "proportionality", "authority", "loyalty", "purity", "thin-morality", "non-moral")
+coefList <- list() 
+# df_coefs = data.frame()
+i = 1
+for(model in list_models){
+  coef_bert = (round(exp(tidy(model)$estimate[2]), 2)-1)*100
+  coef_gpt = (round(exp(tidy(model)$estimate[3]), 2)-1)*100
+  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_gpt))
+  i = i + 1
+}
+
+df_coefs = as.data.frame(matrix(unlist(coefList), nrow=length(unlist(coefList[1]))))
+colnames(df_coefs) = list_names
+
+df_coefs
+```
+
+

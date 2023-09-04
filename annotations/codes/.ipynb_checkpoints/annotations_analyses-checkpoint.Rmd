@@ -1,0 +1,38 @@
+---
+title: "annotations_analyses"
+author: "Suhaib Abdurahman"
+date: "2023-06-03"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Import Data
+
+```{r}
+df <- read.csv("../results/mftc_final_full.csv")
+meta <- read.csv("../data/mfrc_annotators_pv.csv")
+meta <- meta %>% mutate(annotator = paste("annotator", sprintf("%02d", ID), sep = ""))
+# preprocess meta data (age to numeric, etc.)
+
+df <- merge(df, meta, by = "annotator")
+```
+
+## Models
+
+```{r}
+lm <- glm(as.factor(success) ~ annotator, data = df, family = 'binomial')
+lm_demo <- glm(as.factor(success) ~ sex + age + religion, data = df, family = 'binomial')
+```
+
+## Evaluate
+
+```{r}
+summary(lm)
+summary(lm_demo)
+```
+
+
