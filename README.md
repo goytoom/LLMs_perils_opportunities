@@ -86,7 +86,7 @@ Sample the test data from the MFRC:
   
 #### Survey Responses
 1. Open `survey_predictions/code/prepare_data_gpt.ipynb` and run all cells. This will create a `data/processed/SURVEY_cleaned.csv` file for each survey in the `data/surveys` folder. In our data, some information was not collected for all participants so we filter for those participants who responded to the items of interests. *If you apply this pipeline on your own data this step will likely not be necessary or you will have to specify different items of interest in the `COLS_META` variable.*
-    - The code will also generate the prompts under `data/prompts/SURVEY.pkl` for each survey. The prompts is generated from the `PROMPT_TEXT` variables and the item texts. *If you use different surveys, make sure to adjust `PROMPT_TEXT` to the respective response scales.*
+    - The code will also generate the prompts under `data/prompts/SURVEY.pkl` for each survey. The prompts are generated from the `PROMPT_TEXT` variables and the item texts. *If you use different surveys, make sure to adjust `PROMPT_TEXT` to the respective response scales.*
 
 2. Open `survey_predictions/code/run_prompts_gpt.ipynb` and add your openai API key to the respective variable.
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
@@ -99,11 +99,48 @@ Sample the test data from the MFRC:
     - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
 
 ### Open-Source Pipeline
-Preparation: Follow https://github.com/oobabooga/text-generation-webui to install the interface for LLaMa (either use the "one-click-installer" or manually install). Start the interface via terminal (activate the conda environment, enter the textgen directory, run `python server.py --api`). In the interface, click on the "Model" tab. On the right pane, under "Download custom model or LoRA", enter "TheBloke/Luna-AI-Llama2-Uncensored-GPTQ:gptq-4bit-128g-actorder_True" and press download (this will download the model used in our studies. After loading completed, on the left pane under Model choose the model on the drop down menu. Under "model loader" choose "ExLLama" and click on load. This will load the model so that our python script can process the prompts. <br>
+#### Preparation
+- Follow https://github.com/oobabooga/text-generation-webui to install the interface for LLaMa (either use the "one-click-installer" or manually install).
+- Start the interface via terminal (activate the conda environment, enter the textgen directory, run `python server.py --api`).
+- In the interface, click on the "Model" tab. On the right pane, under "Download custom model or LoRA", enter "TheBloke/Luna-AI-Llama2-Uncensored-GPTQ:gptq-4bit-32g-actorder_True" and press download (this will download the model used in our studies.
+- After loading is completed, on the left pane under Model choose the model on the drop down menu.
+- Under "model loader" choose "ExLLama" and click on load. This will load the model so that our python script can process the prompts
 
-First, ... <br>
-Second, ... <br>
+##### Text Annotations
+1. Open `annotations/codes/llama_annotations.ipynb`, and add your openai API key in `openai.api_key = "" #add your openai key here`. This will allow you to use the API to request ChatGPT responses to our prompts.
+     - THIS WILL CHARGE YOUR ACCOUNT!
+     - Make sure that you know the prices before running (check https://openai.com/pricing)
+
+2. Run all cells:
+     - This will save the ChatGPT annotations under `results/predictions/llama2_mfrc_labels_full.csv`
+  
+#### Statistical Anlysis
+1. Open `annotations/codes/llama_performance.ipynb` and run all cells
+     - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/llama2_mfrc_success_full.csv`.
+
+2. Open `annotations/statistical_analyses/annotations_analyses_llama.Rmd` and run all cells
+     - The output of `## Evaluate' will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
+     - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
+
+##### Survey Responses
+1. Open `survey_predictions/code/prepare_data_llama.ipynb` and run all cells. This will create a `data/processed/SURVEY_cleaned_llama2.csv` file for each survey in the `data/surveys` folder. In our data, some information was not collected for all participants so we filter for those participants who responded to the items of interests. *If you apply this pipeline on your own data this step will likely not be necessary or you will have to specify different items of interest in the `COLS_META` variable.*
+    - The code will also generate the prompts under `data/prompts/SURVEY_llama2.pkl` for each survey. The prompts are dynamically generated using `scale_meaning_dict` and the item texts. *If you use different surveys, make sure to adjust `scale_meaning_dict` to the respective response scales.*
+
+2. Open `survey_predictions/code/run_prompts_llama2.ipynb`. Make sure that the textgen interface is running in the background.
+    - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
+4. Run all cells. This will generate the LLaMa2 responses and save them under `results/SURVEY_llama2.csv` for each SURVEY.
+
+### Statistical Analyses
+1. Open `statistical_analyses/survey_analysis_llama2.Rmd` and run all cells.
+    - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
+    - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
+    - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
 
 ### Comparison with top-down methods
-First, ... <br>
-Second, ... <br>
+1. Open `ccr/code/chatGPT_predictions.ipynb` and add your openai API key to the respective variable.
+2. Run all cells:
+     - This will save the ChatGPT predictions under `results/predictions/gpt_topdown.csv`
+   
+#### Statistical Analyses     
+1. Open `ccr/statistical_analyses/topdown_analysis.Rmd`
