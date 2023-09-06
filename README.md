@@ -1,13 +1,10 @@
 # Against GPTology
 This is the repositoy for the "Against GPTology" project. All code and data necessary to replicate the analysis in the paper are presented here/
 
-## Overview
-### Code
-
-### Data Files
-
-## General Setup
-In a terminal execute the command `conda env update -n textgen --file textgen.yaml`. This creates a conda environment and installs the necessary packages to execute all codebooks. Then, activate the environment using `conda activate textgen`.
+## General Setup / First Step
+1. In a terminal execute the command `conda env create --file=textgen.yaml`. This creates a conda environment and installs the necessary packages to execute all codebooks. 
+2. Activate the environment using `conda activate textgen`.
+3. Install the required packages using `pip install -r requirements.txt`
 
 ## Text Annotations
 ### Preparation
@@ -23,14 +20,17 @@ Sample the test data from the MFRC:
       
 ### BERT
 1. To fine-tune BERT, open `annoations/train_bert_model/train_BERT.ipynb` and run all cells
-   - You will need a GPU for this step! We used a v100 on a computing cluster but also tested it with an RTX 2070s!
-   - You will have to make sure to have all GPU related packages (e.g., CUDA, CUDA Toolkit, etc) correctly installed. This should be done automatically when creating the conda environment from the .yaml file. Check this website if you encounter issues with using your GPU and tensorflow: https://www.tensorflow.org/install/pip
-   - After running the file, the model will be saved in `annotations/models/mfrc_normal_full.h5`
+   - You will need a GPU for this step! We used a v100 on a computing cluster but it should also run on less powerful GPUs (e.g., RTX2060)!
+   - Make sure to have all GPU related packages (e.g., CUDA, CUDA Toolkit, etc) correctly installed. 
+   - This should be done automatically when creating the conda environment from the .yaml file. 
+   - Check this website if you encounter issues with using your GPU and tensorflow: https://www.tensorflow.org/install/pip
 
-2. Create the predictions on the test sample by running all cells in `annoations/train_bert_model/predict_BERT.ipynb`:
+2. After running the file, the model will be saved in `annotations/models/mfrc_normal_full.h5`
+
+3. Create the predictions on the test sample by running all cells in `annoations/train_bert_model/predict_BERT.ipynb`:
      - The predictions will be saved under `results/predictions/mfrc_labels_normal_full.csv`
 
-3. We also created regular `.py` files for training and prediction to use via command line. If you are using a computing cluster with slurm, we also created exemplary `.job` files. Adjust as needed.
+4. We also created regular `.py` files for training and prediction to use via command line. If you are using a computing cluster with slurm, we also created exemplary `.job` files. Adjust as needed.
      - If you use the command line, the arguments for training are "mfrc", "full", "normal" (corpus, aggregate level for moral values, training type)
      - If you want to optimize the model paramters (e.g., add classification layers, change the bert model, etc), you can train using "eval" instead of "normal", which will return a cross-validated performance on the training data. In that case you also need to specify the threshold for classifying a text as a containing a moral sentiment (between 0-1).
 
@@ -44,10 +44,13 @@ Sample the test data from the MFRC:
   
 ### Statistical Anlysis
 1. Open `annotations/codes/chatGPT_performance.ipynb` and run all cells
-     - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/gpt_mfrc_success_full.csv`.
+     - This will calculate the correct/false classifications for the ChatGPT annotations, add the annotator demographic information and save it under `../results/evals/gpt_mfrc_success_full.csv`.
 
-2. Open `annotations/statistical_analyses/annotations_analyses.Rmd` and run all cells
-     - The output of `## Evaluate' will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+2. Open `annotations/train_bert_model/BERT_performance.ipynb` and run all cells
+     - This will calculate the correct/false classifications for the BERT model, add the annotator demographic information and save it under `../results/evals/mfrc_success_normal_full.csv`.
+
+3. Open `annotations/statistical_analyses/annotations_analyses.Rmd` and run all cells
+     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
      - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
 
@@ -57,7 +60,7 @@ Sample the test data from the MFRC:
 
 2. Open `survey_predictions/code/run_prompts_gpt.ipynb` and add your openai API key to the respective variable.
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
-4. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
+3. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
 
 ### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis.Rmd` and run all cells.
@@ -81,7 +84,7 @@ Sample the test data from the MFRC:
      - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/gpt_mfrc_success_full_ALT.csv`, one for each altered prompt.
 
 2. Open `annotations/statistical_analyses/annotations_analyses_prompting.Rmd` and run all cells
-     - The output of `## Evaluate' will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
      - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
   
@@ -91,7 +94,7 @@ Sample the test data from the MFRC:
 
 2. Open `survey_predictions/code/run_prompts_gpt.ipynb` and add your openai API key to the respective variable.
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
-4. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
+3. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
 
 #### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis_prompting.Rmd` and run all cells.
@@ -120,7 +123,7 @@ Sample the test data from the MFRC:
      - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/llama2_mfrc_success_full.csv`.
 
 2. Open `annotations/statistical_analyses/annotations_analyses_llama.Rmd` and run all cells
-     - The output of `## Evaluate' will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
      - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
 
@@ -130,7 +133,7 @@ Sample the test data from the MFRC:
 
 2. Open `survey_predictions/code/run_prompts_llama2.ipynb`. Make sure that the textgen interface is running in the background.
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
-4. Run all cells. This will generate the LLaMa2 responses and save them under `results/SURVEY_llama2.csv` for each SURVEY.
+3. Run all cells. This will generate the LLaMa2 responses and save them under `results/SURVEY_llama2.csv` for each SURVEY.
 
 #### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis_llama2.Rmd` and run all cells.

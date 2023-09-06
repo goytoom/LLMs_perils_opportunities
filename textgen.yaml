@@ -1,0 +1,7 @@
+name: textgen
+channels:
+  - defaults
+dependencies:
+  - python=3.10.9
+  - cudatoolkit
+prefix: /home/sabdurah/anaconda3/envs/textgen
