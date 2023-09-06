@@ -7,7 +7,7 @@ output: html_notebook
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 library(car)
-libraries(DescTools)
+library(DescTools)
 ```
 
 ## Import Response Data
@@ -452,7 +452,7 @@ df_scores_final <- bind_rows(df_scores_all, df_scores_gpt_ccr_behaviors, df_scor
 df_scores_final$model <- factor(df_scores_final$model, levels = c('ccr', "gpt", "gpt_ccr")) 
 df_scores_final <- df_scores_final %>% drop_na(model) %>% select_if(~ !any(is.na(.)))
 row.names(df_scores_final) <- 1:nrow(df_scores_final)
-colnames(df_scores_final) <- c("source", "model", "Tightness",	"Individualism",	"Collectivism",	"Need For Cognition",	"Conservatism",	"Religiosity",	"Care",	"Equality",	"Proportionality",	"Loyalty",	"Authority",	"Purity",	"Self-Direction",	"Power",	"Universalism",	"Achievement",	"Security",	"Stimulation",	"Conformity",	"Tradition",	"Hedonism",	"Benevolenvce")
+colnames(df_scores_final) <- c("source", "model", "Tightness",	"Individualism",	"Collectivism",	"Need For Cognition",	"Conservatism",	"Religiosity",	"Care",	"Equality",	"Proportionality",	"Loyalty",	"Authority",	"Purity",	"Self-Direction",	"Power",	"Universalism",	"Achievement",	"Security",	"Stimulation",	"Conformity",	"Tradition",	"Hedonism",	"Benevolence")
 
 # split into 2 source texts
 df_scores_final_value <- df_scores_final %>% filter(source == "values") %>% gather(key = "construct", value = "r2", -c(source, model))
@@ -468,16 +468,6 @@ f = as.formula("r2 ~ model")
 print(DunnettTest(f, data = df_scores_final_value, control = "ccr")) # test for performance differences when using value essays
 print(DunnettTest(f, data = df_scores_final_behav, control = "ccr")) # test for performance differences when using everyday essays
 ```
-### Dedicated Welch's Test (DO NOT ACCOUNT FOR GROUP COMPARISON)
-```{r}
-### Values
-#vs gpt
-t.test(df_scores_final_value[df_scores_final_value$model=="ccr", "r2"], df_scores_final_value[df_scores_final_value$model=="gpt", "r2"], alternative = "two.sided")
-
-#vs gpt_ccr
-t.test(df_scores_final_value[df_scores_final_value$model=="ccr", "r2"], df_scores_final_value[df_scores_final_value$model=="gpt_ccr", "r2"], alternative = "two.sided")
-```
-
 
 ```{r}
 # Behaviors

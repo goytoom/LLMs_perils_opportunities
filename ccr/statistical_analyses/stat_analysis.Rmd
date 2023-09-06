@@ -468,16 +468,6 @@ f = as.formula("r2 ~ model")
 print(DunnettTest(f, data = df_scores_final_value, control = "ccr")) # test for performance differences when using value essays
 print(DunnettTest(f, data = df_scores_final_behav, control = "ccr")) # test for performance differences when using everyday essays
 ```
-### Dedicated Welch's Test (DO NOT ACCOUNT FOR GROUP COMPARISON)
-```{r}
-### Values
-#vs gpt
-t.test(df_scores_final_value[df_scores_final_value$model=="ccr", "r2"], df_scores_final_value[df_scores_final_value$model=="gpt", "r2"], alternative = "two.sided")
-
-#vs gpt_ccr
-t.test(df_scores_final_value[df_scores_final_value$model=="ccr", "r2"], df_scores_final_value[df_scores_final_value$model=="gpt_ccr", "r2"], alternative = "two.sided")
-```
-
 
 ```{r}
 # Behaviors

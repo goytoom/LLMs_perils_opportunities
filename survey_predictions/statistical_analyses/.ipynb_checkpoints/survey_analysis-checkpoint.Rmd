@@ -27,18 +27,16 @@ library(AMR)
 rm(list = ls()) #potentially add other demographics like social class
 evals_dir = "../results/"
 survey_dir = "../data/processed/"
-data = "closure" # change to respective survey you are investigating
+data = "bigfive" # change for all respective surveys
 
-llama_path = paste(evals_dir, data, "_llama2.csv", sep="") #llama
-gpt_path = paste(evals_dir, data, ".csv", sep="") #gpt3.5
-survey_path = paste(survey_dir, data, "_cleaned", ".csv", sep="") #humans
+results_path = paste(evals_dir, data, ".csv", sep="") #chatGPT
+survey_path = paste(survey_dir, data, "_cleaned", ".csv", sep="") #chatGPT
 
-df_llama <- read.csv(llama_path) # load predictions
-df_gpt <- read.csv(gpt_path) # load predictions
+df_gpt <- read.csv(results_path) # load predictions
 df_human <- read.csv(survey_path) # load human responses
 print(nrow(df_human))
       
-n_items = nrow(df_llama)
+n_items = nrow(df_gpt)
 max_val = max(df_human[1])
 min_val = min(df_human[1])
 
@@ -88,7 +86,7 @@ constructs = list(Extraversion = c(1, 6, 11, 16, 21, 26, 31, 36), Agreeableness 
 ### Calculate construct scores
 ```{r}
 newCols <- function(df, colList, mode){
-  if(mode=="llama"){
+  if(mode=="gpt"){
      for(col in names(colList)){
        values = colMeans(df[colList[[col]],3:ncols], na.rm = TRUE)
         df[nrow(df) + 1,] = c(id = 0, item_text=0, values)
@@ -142,27 +140,13 @@ assignGroups <- function(df, varname){
 ## Process Data
 
 ```{r}
-####### LLAMA
-ncols = ncol(df_llama) # transform to numeric
-df_llama2 <- df_llama %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
-
-if(length(reverse_code)!=0){
-df_llama2[reverse_code, 3:ncols] = apply(df_llama2[reverse_code, 3:ncols], 2, item.reverse, min=min_val, max=max_val)
-}
-df_llama2 = newCols(df_llama2, constructs, "llama") # create construct scores
-
-# get average responses across all repeats
-llama_avg <- rowMeans(df_llama2[, 3:ncols], na.rm = TRUE)
-print(sum(is.na(df_llama2)))
-
 ####### GPT
 ncols = ncol(df_gpt) # transform to numeric
 df_gpt2 <- df_gpt %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
-
 if(length(reverse_code)!=0){
 df_gpt2[reverse_code, 3:ncols] = apply(df_gpt2[reverse_code, 3:ncols], 2, item.reverse, min=min_val, max=max_val)
 }
-df_gpt2 = newCols(df_gpt2, constructs, "llama") # create construct scores
+df_gpt2 = newCols(df_gpt2, constructs, "gpt") # create construct scores
 
 # get average responses across all repeats
 gpt_avg <- rowMeans(df_gpt2[, 3:ncols], na.rm = TRUE)
@@ -178,12 +162,12 @@ df_humans_r[df_humans_r$political_opinion=="Moderate, middle of the road", "poli
 # get construct scores
 df_humans_r = newCols(df_humans_r, constructs, "humans")
 
-# get difference of humans and llama on items
+# get difference of humans and gpt on items
 df_diff = df_humans_r
-df_diff[, 1:(length(llama_avg) - length(constructs))] = abs(df_diff[, 1:(length(llama_avg) - length(constructs))] - llama_avg[1:(length(llama_avg)-5)])
+df_diff[, 1:(length(gpt_avg) - length(constructs))] = abs(df_diff[, 1:(length(gpt_avg) - length(constructs))] - gpt_avg[1:(length(gpt_avg)-5)])
 
-# get difference of humans and llama on constructs
-df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] = abs(df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] - llama_avg[(length(llama_avg)-length(constructs)+1):length(llama_avg)])
+# get difference of humans and gpt on constructs
+df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] = abs(df_diff[, (ncol(df_diff)-length(constructs)+1):ncol(df_diff)] - gpt_avg[(length(gpt_avg)-length(constructs)+1):length(gpt_avg)])
 
 # get cumulative deviation on item and construct level
 df_diff <- df_diff %>% mutate(cum_diff = rowSums(select(., contains(data))))
@@ -200,56 +184,46 @@ groupComparisons <- function(df, varnames){
     human_cnstr = df
     print(varname)
     human_cnstr <- assignGroups(human_cnstr, varname)
-    llama_cnstr["group"] = "LLAMA"
     gpt_cnstr["group"] = "GPT"
-    df_desc = rbind(human_cnstr, llama_cnstr, gpt_cnstr)
-    df_desc$group <- factor(df_desc$group, levels = c('LLAMA', "GPT", unique(human_cnstr$group)))
+    df_desc = rbind(human_cnstr, gpt_cnstr)
+    df_desc$group <- factor(df_desc$group, levels = c('GPT', unique(human_cnstr$group)))
     
-    # human_cnstr_avg <- human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+    human_cnstr_avg <- human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
     human_cnstr_sd = human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) sd(x, na.rm = TRUE)))
     
     if(length(constructs)>1){
-      # llama_cnstr_avg = colMeans(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
-      llama_cnstr_sd = sapply(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], sd, na.rm = TRUE)
+      gpt_cnstr_avg = colMeans(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
       gpt_cnstr_sd = sapply(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], sd, na.rm = TRUE)
     }else{
-      # llama_cnstr_avg = mean(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
-      llama_cnstr_sd = sd(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
+      gpt_cnstr_avg = mean(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
       gpt_cnstr_sd = sd(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
-    }
-    # 
-    # # differences of means on all constructs
-    # diff_avg = human_cnstr_avg
-    # diff_avg[,names(constructs)] = sweep(human_cnstr_avg[,names(constructs)], 2, llama_cnstr_avg)
+    } 
     
-    #Dunnet, are group means different from LLaMa?
-    if(nrow(human_cnstr)>0){
+    # differences of means on all constructs
+    diff_avg = human_cnstr_avg
+    diff_avg[,names(constructs)] = sweep(human_cnstr_avg[,names(constructs)], 2, gpt_cnstr_avg)
+    
+    #Dunnet, are group means different from chatGPT?
     for(col in colnames(df_desc)){
       if(col != "group"){
         f = as.formula(paste(col, "~ group", collapse = ""))
         # model <- aov(f, data = df_desc)
         # print(summary(model))
         print(col)
-        print(DunnettTest(f, data = df_desc, control = "LLAMA"))
+        print(DunnettTest(f, data = df_desc, control = "GPT"))
       }
     }
     print("Bonferroni corrected p-value:")
     print(0.05/length(constructs))
     
-    # calculate difference of variance for LLama vs demographic groups and GPT
     diff_sd = human_cnstr_sd
-    diff_sd[,names(constructs)] = sweep(human_cnstr_sd[,names(constructs)], 2, llama_cnstr_sd)
-    diff_sd_models = gpt_cnstr_sd - llama_cnstr_sd
-    diff_sd_models = c("GPT", diff_sd_models)
-    names(diff_sd_models) <- c("group", names(constructs))
-    diff_sd = rbind(diff_sd, diff_sd_models)
-    
+    diff_sd[,names(constructs)] = sweep(human_cnstr_sd[,names(constructs)], 2, gpt_cnstr_sd)
   
     # test differences of variance on all constructs (p values)
     for(g in unique(df_desc$group)){
-      if(g!="LLAMA"){
-        df1 = df_desc %>% filter(group==g | group=="LLAMA") %>% select(names(constructs))
-        df2 = df_desc %>% filter(group==g | group=="LLAMA")
+      if(g!="GPT"){
+        df1 = df_desc %>% filter(group==g | group=="GPT") %>% select(names(constructs))
+        df2 = df_desc %>% filter(group==g | group=="GPT")
         print(g)
         print(apply(df1,2,function(x) 
       {leveneTest(x ~ as.factor(df2$group))[1,3]}))
@@ -271,12 +245,9 @@ groupComparisons <- function(df, varnames){
     
     print(t1)
     
-    ggsave(filename = paste("../results/plots/llama/", data, "_", varname, "_llama.png", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='png')
+    ggsave(filename = paste("../results/plots/gpt/", data, "_", varname, ".png", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='png')
     
     print("---------------------------------------------------")
-    }else{
-    print("Not enough data for any demographic group")
-    }
   }
   
   return(list(df_desc, df_comparison))
@@ -291,15 +262,13 @@ groupComparisons <- function(df, varnames){
 # get construct values
 human_cnstr = data.frame(df_humans_r[, (ncol(df_humans_r)-length(constructs)+1):(ncol(df_humans_r))])
 colnames(human_cnstr) = names(constructs)
-llama_cnstr = transpose(df_llama2[(length(llama_avg)-length(constructs)+1):length(llama_avg),3:ncols])
-colnames(llama_cnstr) <- names(constructs)
 gpt_cnstr = transpose(df_gpt2[(length(gpt_avg)-length(constructs)+1):length(gpt_avg),3:ncols])
 colnames(gpt_cnstr) <- names(constructs)
 
 ### Vars: sex, age, race, religion, political_opinion
 # divide human participants in demographic groups
 # varname = "age"
-df_list = groupComparisons(human_cnstr, c("age", "sex", "race", "religion", "political_opinion"))
+df_list = groupComparisons(human_cnstr, c("age", "sex", "race", "religion", "political_opinion", "social_class"))
 df_desc <- df_list[[1]]
 df_comparison <- df_list[[2]]
 ```
@@ -311,9 +280,10 @@ df_comparison <- df_list[[2]]
 df_diff$political_opinion <- relevel(factor(df_diff$political_opinion), ref = "Conservative")
 df_diff$religion <- relevel(factor(df_diff$religion), ref = "Christianity")
 df_diff$race <- relevel(factor(df_diff$race), ref = "White")
+df_diff$social_class <- relevel(factor(df_diff$social_class), ref = "Upper class")
 
 # test different models
-lm_demo_cnstr <- lm(cum_diff_cnstr ~ age + sex + political_opinion + religion + race, df_diff) 
+lm_demo_cnstr <- lm(cum_diff_cnstr ~ age + sex + political_opinion + religion + race + social_class, df_diff)
 ```
 
 ### Results
@@ -344,7 +314,7 @@ est <- modelplot(lm_demo_cnstr, type = "est", terms = vars, coef_map = coefmaps,
 est
 
 #save plot
-ggsave(filename = paste("../results/plots/llama/", data, "_bias_estimates_llama.png", sep=""), est, width = 8, height = 4, dpi = 150, units = "in", device='png')
+ggsave(filename = paste("../results/plots/gpt/", data, "_bias_estimates.png", sep=""), est, width = 8, height = 4, dpi = 150, units = "in", device='png')
 ```
 
 
