@@ -9,14 +9,14 @@ This is the repositoy for the "Against GPTology" project. All code and data nece
 ## Text Annotations
 ### Preparation
 Sample the test data from the MFRC:
-  - Open jupyter lab or any other editor that can handle pythonbooks: E.g., in a terminal, navigate to the project folder, activate the conda environment, and execute `jupyter lab`.
-  - Open `annotations/train_bert_model/prepare_data.ipynb`. This codebook processes the MFRC data set and creates a training sample to fine-tune BERT and a separate test sample to compare BERT and ChatGPT.
-  - Run all cells in the pythonbooks. This should create the following files:
-        - `data/preprocessed/mfrc_eval_full.csv`
-        - `data/preprocessed/mfrc_meta_sample_full.csv`
-        - `data/preprocessed/mfrc_sample_full.csv`
-        - `data/preprocessed/mfrc_cleaned_full.csv`
-        - `data/train_test/mfrc_train_full.pkl`
+- Open jupyter lab or any other editor that can handle pythonbooks: E.g., in a terminal, navigate to the project folder, activate the conda environment, and execute `jupyter lab`.
+- Open `annotations/train_bert_model/prepare_data.ipynb`. This codebook processes the MFRC data set and creates a training sample to fine-tune BERT and a separate test sample to compare BERT and ChatGPT.
+- Run all cells in the pythonbooks. This should create the following files:
+	- `data/preprocessed/mfrc_eval_full.csv`
+	- `data/preprocessed/mfrc_meta_sample_full.csv`
+	- `data/preprocessed/mfrc_sample_full.csv`
+	- `data/preprocessed/mfrc_cleaned_full.csv`
+	- `data/train_test/mfrc_train_full.pkl`
       
 ### BERT
 1. To fine-tune BERT, open `annoations/train_bert_model/train_BERT.ipynb` and run all cells
