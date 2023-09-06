@@ -60,7 +60,7 @@ Sample the test data from the MFRC:
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
 4. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
 
-### Statistical Analyses
+#### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis.Rmd` and run all cells.
     - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
     - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
@@ -108,7 +108,7 @@ Sample the test data from the MFRC:
 - After loading is completed, on the left pane under Model choose the model on the drop down menu.
 - Under "model loader" choose "ExLLama" and click on load. This will load the model so that our python script can process the prompts
 
-##### Text Annotations
+#### Text Annotations
 1. Open `annotations/codes/llama_annotations.ipynb`, and add your openai API key in `openai.api_key = "" #add your openai key here`. This will allow you to use the API to request ChatGPT responses to our prompts.
      - THIS WILL CHARGE YOUR ACCOUNT!
      - Make sure that you know the prices before running (check https://openai.com/pricing)
@@ -116,7 +116,7 @@ Sample the test data from the MFRC:
 2. Run all cells:
      - This will save the ChatGPT annotations under `results/predictions/llama2_mfrc_labels_full.csv`
   
-#### Statistical Anlysis
+##### Statistical Anlysis
 1. Open `annotations/codes/llama_performance.ipynb` and run all cells
      - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/llama2_mfrc_success_full.csv`.
 
@@ -125,7 +125,7 @@ Sample the test data from the MFRC:
      - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
 
-##### Survey Responses
+#### Survey Responses
 1. Open `survey_predictions/code/prepare_data_llama.ipynb` and run all cells. This will create a `data/processed/SURVEY_cleaned_llama2.csv` file for each survey in the `data/surveys` folder. In our data, some information was not collected for all participants so we filter for those participants who responded to the items of interests. *If you apply this pipeline on your own data this step will likely not be necessary or you will have to specify different items of interest in the `COLS_META` variable.*
     - The code will also generate the prompts under `data/prompts/SURVEY_llama2.pkl` for each survey. The prompts are dynamically generated using `scale_meaning_dict` and the item texts. *If you use different surveys, make sure to adjust `scale_meaning_dict` to the respective response scales.*
 
@@ -133,7 +133,7 @@ Sample the test data from the MFRC:
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
 4. Run all cells. This will generate the LLaMa2 responses and save them under `results/SURVEY_llama2.csv` for each SURVEY.
 
-### Statistical Analyses
+##### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis_llama2.Rmd` and run all cells.
     - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
     - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
