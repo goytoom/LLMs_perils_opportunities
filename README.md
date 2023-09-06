@@ -66,6 +66,8 @@ Sample the test data from the MFRC:
     - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
     - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
 
+2. Repeat this for any survey you are investigating (in our paper: bigfive, closure, cognition, rwa, systems_feelings; change variable `d = ` to these values).
+
 ### Prompt Sensitivity
 #### Text Annotations
 1. Open `annotations/codes/chatGPT_annotations_ALT.ipynb`, and add your openai API key in `openai.api_key = "" #add your openai key here`. This will allow you to use the API to request ChatGPT responses to our prompts.
@@ -136,6 +138,8 @@ Sample the test data from the MFRC:
     - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
     - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
     - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
+
+2. Repeat this for any survey you are investigating (in our paper: bigfive, closure, cognition, rwa, systems_feelings; change variable `d = ` to these values).
 
 ### Comparison with top-down methods
 1. Open `ccr/code/chatGPT_predictions.ipynb` and add your openai API key to the respective variable.
