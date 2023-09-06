@@ -1,5 +1,5 @@
 # Against GPTology
-This is the repositoy for the "Against GPTology" project. All code and data necessary to replicate the analysis in the paper are presented here/
+This is the repositoy for the "Against GPTology" project. All code and data necessary to replicate the analysis in the paper are presented here.
 
 ## General Setup / First Step
 1. In a terminal execute the command `conda env create --file=textgen.yaml`. This creates a conda environment and installs the necessary packages to execute all codebooks. 
@@ -9,7 +9,7 @@ This is the repositoy for the "Against GPTology" project. All code and data nece
 ## Text Annotations
 ### Preparation
 Sample the test data from the MFRC:
-  - Open jupyter lab or any other editor that can handle pythonbooks: E.g., in a terminal in your project folder, execute `jupyter lab`.
+  - Open jupyter lab or any other editor that can handle pythonbooks: E.g., in a terminal, navigate to the project folder, activate the conda environment, and execute `jupyter lab`.
   - Open `annotations/train_bert_model/prepare_data.ipynb`. This codebook processes the MFRC data set and creates a training sample to fine-tune BERT and a separate test sample to compare BERT and ChatGPT.
   - Run all cells in the pythonbooks. This should create the following files:
         - `data/preprocessed/mfrc_eval_full.csv`
@@ -30,7 +30,7 @@ Sample the test data from the MFRC:
 3. Create the predictions on the test sample by running all cells in `annoations/train_bert_model/predict_BERT.ipynb`:
      - The predictions will be saved under `results/predictions/mfrc_labels_normal_full.csv`
 
-4. We also created regular `.py` files for training and prediction to use via command line. If you are using a computing cluster with slurm, we also created exemplary `.job` files. Adjust as needed.
+4. We also created regular `.py` files for training and prediction via command line. If you are using a computing cluster with slurm, we also created exemplary `.job` files. Adjust as needed.
      - If you use the command line, the arguments for training are "mfrc", "full", "normal" (corpus, aggregate level for moral values, training type)
      - If you want to optimize the model paramters (e.g., add classification layers, change the bert model, etc), you can train using "eval" instead of "normal", which will return a cross-validated performance on the training data. In that case you also need to specify the threshold for classifying a text as a containing a moral sentiment (between 0-1).
 
