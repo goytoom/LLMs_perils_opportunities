@@ -143,4 +143,9 @@ Sample the test data from the MFRC:
      - This will save the ChatGPT predictions under `results/predictions/gpt_topdown.csv`
    
 #### Statistical Analyses     
-1. Open `ccr/statistical_analyses/topdown_analysis.Rmd`
+1. Open `ccr/statistical_analyses/topdown_analysis.Rmd` and run all cells.
+     - This will output the statistical analysis and relevant plots and save them under `results/plots/`.
+     - The output of `### Dunnett's Test (gpt & gpt_ccr vs CCR)` tests whether ChatGPT's predictions (on the item-level or construct-level) differ significantly from CCR (our topdown method).
+     - The output of `### Correlation of model performances` shows the correlation between the CCR performance and ChatGPT (on the item and construct level)
+     - These analyses can be repeated with different topdown methods or ChatGPT prompting styles
+           - Simply run the alternative topdown method and save the resulting performance in a file analogue to the current `behavior_surve.csv` or `values_survey.csv` files. For different GPT approaches, change the prompts in the `chatGPT_predictions.ipynb` according to your respective considerations.
