@@ -278,8 +278,8 @@ desc_cols = desc_cols[1:length(desc_cols)-1]
 df_comparison <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE)
 
 t1 <- ggplot(df_comparison, aes(x = construct, y = value, fill = group)) +
-      PupillometryR::geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .2, y = 0), adjust = 1.5, trim = FALSE, alpha = .3, colour = NA)+
-      geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.05, height=0.075, x = -.25, nudge.from = "jittered"), size = 1, shape = 20)+
+      PupillometryR::geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .2, y = 0), adjust = 1.5, trim = FALSE, alpha = .35, colour = NA)+
+      geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.05, height=0.075, x = -.25, nudge.from = "jittered"), size = 1, shape = 20, alpha = 0.5)+
       geom_boxplot(aes(x = construct, y = value, fill = group),outlier.shape = NA, lwd=.1, alpha = .5, width = .35, colour = "black")+
       scale_colour_brewer(palette = "Set1")+ scale_fill_brewer(palette = "Set1")+ xlab("") + ylab("Construct Score") + theme_apa(y.font.size=11)
     
