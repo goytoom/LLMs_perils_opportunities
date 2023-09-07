@@ -23,11 +23,16 @@ library(AMR)
 
 ## Import Response Data
 
+### Set dataset to investigate here:
 ```{r}
-rm(list = ls()) #potentially add other demographics like social class
+rm(list = ls()) #remove all variables before analysis
+data = "bigfive" # change for all respective surveys
+```
+
+### Load specified data
+```{r}
 evals_dir = "../results/"
 survey_dir = "../data/processed/"
-data = "closure" # change to respective survey you are investigating
 
 llama_path = paste(evals_dir, data, "_llama2.csv", sep="") #llama
 gpt_path = paste(evals_dir, data, ".csv", sep="") #gpt3.5
@@ -141,7 +146,7 @@ assignGroups <- function(df, varname){
 
 ## Process Data
 
-```{r}
+```{r warning=F}
 ####### LLAMA
 ncols = ncol(df_llama) # transform to numeric
 df_llama2 <- df_llama %>% mutate(across(starts_with("response_"), ~ as.numeric(gsub("([0-9]+).*$", "\\1", .))))
@@ -194,6 +199,13 @@ print(length(unique(df_diff$currentCountry)))
 
 ## Statistical Analyses
 ```{r}
+color_mapping <- list(age = c("LLAMA" = "#ffff33", "GPT" = "#e41a1c", "18-24" = "#377eb8", "25-34" = "#4daf4a", "35-54" = "#984ea3", "55-74" = "#ff7f00"),
+                      political_opinion = c("LLAMA" = "#ffff33","GPT" = "#e41a1c", "Conservative" = "#377eb8", "Liberal" = "#4daf4a", "Moderate" = "#984ea3"),
+                      race = c("LLAMA" = "#ffff33","GPT" = "#e41a1c", "Asian" = "#377eb8", "Black" = "#4daf4a", "Hispanic" = "#984ea3", "White" = "#ff7f00"),
+                      religion = c("LLAMA" = "#ffff33","GPT" = "#e41a1c", "Agnostic" = "#377eb8", "Atheist" = "#4daf4a", "Christianity" = "#984ea3"),
+                      sex = c("LLAMA" = "#ffff33", "GPT" = "#e41a1c", "Male" = "#377eb8", "Female" = "#4daf4a")
+                      )
+
 groupComparisons <- function(df, varnames){
 
   for(varname in varnames){
@@ -203,24 +215,19 @@ groupComparisons <- function(df, varnames){
     llama_cnstr["group"] = "LLAMA"
     gpt_cnstr["group"] = "GPT"
     df_desc = rbind(human_cnstr, llama_cnstr, gpt_cnstr)
-    df_desc$group <- factor(df_desc$group, levels = c('LLAMA', "GPT", unique(human_cnstr$group)))
+    df_desc$group <- factor(df_desc$group, levels = c('LLAMA', "GPT", sort(unique(human_cnstr$group))))
     
-    # human_cnstr_avg <- human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) mean(x, na.rm = TRUE)))
+    print(sort(unique(human_cnstr$group)))
+    
     human_cnstr_sd = human_cnstr %>% group_by(group) %>% summarise(across(everything(), \(x) sd(x, na.rm = TRUE)))
     
     if(length(constructs)>1){
-      # llama_cnstr_avg = colMeans(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
       llama_cnstr_sd = sapply(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], sd, na.rm = TRUE)
       gpt_cnstr_sd = sapply(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], sd, na.rm = TRUE)
     }else{
-      # llama_cnstr_avg = mean(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
       llama_cnstr_sd = sd(llama_cnstr[, !(names(llama_cnstr) %in% c("group"))], na.rm = TRUE)
       gpt_cnstr_sd = sd(gpt_cnstr[, !(names(gpt_cnstr) %in% c("group"))], na.rm = TRUE)
     }
-    # 
-    # # differences of means on all constructs
-    # diff_avg = human_cnstr_avg
-    # diff_avg[,names(constructs)] = sweep(human_cnstr_avg[,names(constructs)], 2, llama_cnstr_avg)
     
     #Dunnet, are group means different from LLaMa?
     if(nrow(human_cnstr)>0){
@@ -264,10 +271,10 @@ groupComparisons <- function(df, varnames){
     df_comparison <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE)
     
     t1 <- ggplot(df_comparison, aes(x = construct, y = value, fill = group)) +
-      PupillometryR::geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .2, y = 0), adjust = 1.5, trim = FALSE, alpha = .3, colour = NA)+
-      geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.05, height=0.075, x = -.25, nudge.from = "jittered"), size = 1, shape = 20)+
-      geom_boxplot(aes(x = construct, y = value, fill = group),outlier.shape = NA, lwd=.1, alpha = .5, width = .35, colour = "black")+
-      scale_colour_brewer(palette = "Set1")+ scale_fill_brewer(palette = "Set1")+ xlab("") + ylab("Construct Score") + theme_apa(y.font.size=11)
+      PupillometryR::geom_flat_violin(aes(fill = group), scale = "width", position = position_nudge(x = .2, y = 0), adjust = 1.5, trim = FALSE, alpha = .5, colour = NA)+
+      geom_point(aes(x = construct, y = value, colour = group), position = ggpp::position_jitternudge(width=0.05, height=0.075, x = -.25, nudge.from = "jittered"), size = 1, shape = 20, alpha = 0.65)+
+      geom_boxplot(aes(x = construct, y = value, fill = group),outlier.shape = NA, lwd=.1, alpha = .65, width = .35, colour = "black")+
+      scale_colour_manual(values = color_mapping[[varname]]) + xlab("") + ylab("Construct Score") + theme_apa(y.font.size=11) + scale_fill_manual(values = color_mapping[[varname]]) # + scale_fill_brewer(palette = "Set1") + scale_colour_brewer(palette = "Set1")
     
     print(t1)
     
@@ -298,7 +305,6 @@ colnames(gpt_cnstr) <- names(constructs)
 
 ### Vars: sex, age, race, religion, political_opinion
 # divide human participants in demographic groups
-# varname = "age"
 df_list = groupComparisons(human_cnstr, c("age", "sex", "race", "religion", "political_opinion"))
 df_desc <- df_list[[1]]
 df_comparison <- df_list[[2]]
@@ -321,30 +327,6 @@ lm_demo_cnstr <- lm(cum_diff_cnstr ~ age + sex + political_opinion + religion + 
 ```{r}
 # variables reference at 0 not average
 summary(lm_demo_cnstr)
-```
-
-
-## Plots
-
-```{r}
-desc_cols = colnames(df_desc)
-desc_cols = desc_cols[1:length(desc_cols)-1]
-df_plot <- df_comparison %>% group_by(construct, group) %>% summarise(mean = mean(value), se = sd(value)/sqrt(n()))
-df_plot_var <- gather(df_desc, construct, value, all_of(desc_cols), factor_key=TRUE) %>% group_by(construct, group) %>% summarise(mean = mean(value), se = sd(value)/sqrt(n()), variance = var(value), ymax = ((n()-1)*var(value))/qchisq(0.025,n()-1), ymin=((n()-1)*var(value))/qchisq(0.975,n()-1))
-
-# rename categories
-vars = c("age", "sexMale", "political_opinionLiberal", "political_opinionModerate", "religionIslam", "religionJudaism", "religionNonreligious: atheist", "religionNonreligious: agnostic", "religionHinduism", "religionBuddhism",
-                                                  "raceBlack", "raceAsian", "raceHispanic", "raceMENA", "raceNative American", "raceOther")
-# rename for estimates plots
-coefmaps = c("age" = "Age", "sexMale" = "Sex (Male)", "political_opinionLiberal" = "Political Opinion (Liberal)", "political_opinionModerate"  = "Political Opinion (Moderate)", "religionIslam" = "Religion (Islam)", "religionJudaism" = "Religion (Judaism)", "religionNonreligious: atheist"  = "Religion (Atheism)", "religionNonreligious: agnostic"  = "Religion (Agnostic)", "religionHinduism" = "Religion (Hinduism)", "religionBuddhism" = "Religion (Buddhism)", "raceBlack" = "Race (Black)", "raceAsian" = "Race (Asian)", "raceHispanic" = "Race (Latino)", "raceMENA" = "Race (MENA)", "raceNative American" = "Race (Native American)", "raceOther" = "Race (Other)")
-
-# format plots
-b <- list(geom_vline(xintercept = 0, color = 'orange'))
-est <- modelplot(lm_demo_cnstr, type = "est", terms = vars, coef_map = coefmaps, background = b) + theme_apa() 
-est
-
-#save plot
-ggsave(filename = paste("../results/plots/llama/", data, "_bias_estimates_llama.png", sep=""), est, width = 8, height = 4, dpi = 150, units = "in", device='png')
 ```
 
 

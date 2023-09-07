@@ -5,6 +5,7 @@ This is the repositoy for the "Against GPTology" project. All code and data nece
 1. In a terminal execute the command `conda env create --file=textgen.yaml`. This creates a conda environment and installs the necessary packages to execute all codebooks. 
 2. Activate the environment using `conda activate textgen`.
 3. Install the required packages using `pip install -r requirements.txt`
+4. You might have to link tensorRT using: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/anaconda3/envs/textgen/lib/python3.10/site-packages/tensorrt-libs/` or where your python libs are saved. (tensorRT is optional but might increase inference speed)
 
 ## Text Annotations
 ### Preparation

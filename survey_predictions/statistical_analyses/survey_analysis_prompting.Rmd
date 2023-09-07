@@ -21,17 +21,21 @@ library(jtools)
 
 ## Import Response Data
 
+### Set dataset to investigate here:
 ```{r}
-rm(list = ls())
+rm(list = ls()) #potentially add other demographics like social class
+data = "bigfive" # change for all respective surveys
+```
+
+### Load specified data
+
+```{r, warning=F}
 evals_dir = "../results/"
 survey_dir = "../data/processed/"
-data = "bigfive"
-alt = "Response Rescaling"
-# alts = c("Added Context", "Response Rescaling", "ALT4")
 
 alt_path1 = paste(evals_dir, data, "_", "ALT1", ".csv", sep="") #chatGPT
 alt_path2 = paste(evals_dir, data, "_", "ALT2", ".csv", sep="") #chatGPT
-alt_path3 = paste(evals_dir, data, "_", "ALT4", ".csv", sep="") #chatGPT
+alt_path3 = paste(evals_dir, data, "_", "ALT3", ".csv", sep="") #chatGPT
 original_path = paste(evals_dir, data, ".csv", sep="")
 survey_path = paste(survey_dir, data, "_cleaned", ".csv", sep="") #chatGPT
 
@@ -193,9 +197,8 @@ colnames(gpt_cnstr2) <- names(constructs)
 gpt_cnstr3 = transpose(df_gpt_alt32[(length(gpt_alt_avg3)-length(constructs)+1):length(gpt_alt_avg3),3:ncols])
 colnames(gpt_cnstr3) <- names(constructs)
 
-## automatically split groups from 2-n, leave 1 as "other"
+## automatically split groups, leave 1 as "other"
 ### Vars: sex, age, race, religion, political_opinion
-### write function: takes in data and variable name -> assigns each unique variable value a unique group
 
 varname = "political_opinion"
 gpt_cnstr["group"] = "Original Prompt"
@@ -227,7 +230,6 @@ if(length(constructs)>1){
   gpt_cnstr_sd3 = sd(gpt_cnstr3[, !(names(gpt_cnstr3) %in% c("group"))], na.rm = TRUE)
 }
 
-
 ## Test group differences
 # test differences of means on all constructs
 # shows effect of variable on probability for human => positive means humans have higher mean
@@ -240,8 +242,6 @@ diff_sd = data.frame(t(gpt_cnstr_sd), row.names = c("Original Prompt"))
 diff_sd["Added Context",] = diff_sd["Original Prompt",] - gpt_cnstr_sd1
 diff_sd["Response Rescaling",] = diff_sd["Original Prompt",] - gpt_cnstr_sd2
 diff_sd["Semantic Changes",] = diff_sd["Original Prompt",] - gpt_cnstr_sd3
-
-# print(diff_avg %>% mutate_if(is.numeric, round, 3)) # constr mean diff
 
 #Dunnet, are group means different from chatGPT?
 for(col in colnames(df_desc)){

@@ -19,7 +19,7 @@ corp = "mfrc"
 type = "normal"
 mode = "full"
 
-results_path = paste(evals_dir, paste("llama2", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
+results_path = paste(evals_dir, paste("llama2", corp, "success", mode, sep="_"), ".csv", sep="") #llama
 ```
 
 ## Import Data
@@ -50,37 +50,45 @@ df$age <- as.numeric(gsub("([0-9]+).*$", "\\1", df$age))
 ## Models
 
 ```{r}
-lm_general <- glm(as.factor(success) ~ annotator, data = df, 
-                  family = 'binomial')
-
+# demographics
 lm_demo <- glm(as.factor(success) ~ sex + age + religion, 
                data = df, family = 'binomial')
 
+#morals
 lm_mfq <- glm(as.factor(success) ~ care + equality + proportionality + 
                 loyalty + authority + purity, data = df, family = 'binomial')
 
 ############## psych
 
+#personality
 lm_psycho <- glm(as.factor(success) ~ open.mindedness + conscientiousness + 
                    agreeableness + extraversion + 
                    agreeableness + negative.emotionality, 
                  data = df, family = 'binomial')
+
+# creativity
 lm_creative <- glm(as.factor(success) ~ open.mindedness + creative.imagination + 
                    aesthetic.sensitivity + intellectual.curiosity,
                  data = df, family = 'binomial')
+
+#mental health
 lm_mental <- glm(as.factor(success) ~ anxiety + depression + 
                    emotional.volatility,
                  data = df, family = 'binomial')
 
 
 ############# social factors
+
+#politics
 lm_social <- glm(as.factor(success) ~ collectivism + individualism + 
                    tightness + social_conservatism + 
                    economical_conservatism, data = df, family = 'binomial')
 
+#interpersonal virtues
 lm_kindness <- glm(as.factor(success) ~ compassion + trust + 
                      respectfulness, data = df, family = 'binomial')
 
+#productivity
 lm_productive <- glm(as.factor(success) ~ productiveness + organization + 
                        responsibility, data = df, family = 'binomial')
 ```
@@ -89,8 +97,6 @@ lm_productive <- glm(as.factor(success) ~ productiveness + organization +
 ## Evaluate
 
 ```{r}
-summary(lm_general)
-
 summary(lm_demo)
 coef = (round(exp(tidy(lm_demo)$estimate), 2) - 1)*100
 p = round(tidy(lm_demo)$p.value, 3)
@@ -143,7 +149,7 @@ print(p[2:length(p)])
 ## Compare distributions of predictions (are the prediction skewed?)
 ```{r}
 results_path_1 = paste(evals_dir, paste(corp, "success", type, mode, sep="_"), ".csv", sep="") #bert
-results_path_2 = paste(evals_dir, paste("llama2", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
+results_path_2 = paste(evals_dir, paste("llama2", corp, "success", mode, sep="_"), ".csv", sep="") #llama2
 results_path_gt = paste("../data/preprocessed/", paste(corp, "sample", mode, sep="_"), ".csv", sep = "")
   
 df1 <- read.csv(results_path_1) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE) # load predictions
@@ -198,8 +204,8 @@ coefList <- list()
 i = 1
 for(model in list_models){
   coef_bert = (round(exp(tidy(model)$estimate[2]), 2)-1)*100
-  coef_gpt = (round(exp(tidy(model)$estimate[3]), 2)-1)*100
-  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_gpt))
+  coef_llama = (round(exp(tidy(model)$estimate[3]), 2)-1)*100
+  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_llama))
   i = i + 1
 }
 

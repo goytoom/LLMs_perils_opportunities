@@ -1,13 +1,14 @@
-import tensorflow as tf
-import tensorflow_hub as hub
-from tensorflow.keras.models import load_model 
-from keras.metrics import Precision, Recall
-
 import pandas as pd
 import numpy as np
 import pickle as pkl
 import sys
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+
+import tensorflow as tf
+import tensorflow_hub as hub
+from tensorflow.keras.models import load_model 
+from keras.metrics import Precision, Recall
 
 from nltk.corpus import stopwords
 import tokenization
@@ -93,7 +94,7 @@ def crossVal(mode, threshold):
     kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=0)
 
     cvscores = []
-    for train, test in kfold.split(X[0], reverse_onehot(y)): #potentially use CV folds as predictions to evaluate against chatGPT
+    for train, test in kfold.split(X[0], reverse_onehot(y)): 
         tf.keras.backend.clear_session() # remove any past model from session
         if os.path.isfile(model_file): # remove saved models from checkpoint
             os.remove(model_file)

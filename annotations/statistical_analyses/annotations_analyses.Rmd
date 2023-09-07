@@ -19,7 +19,7 @@ corp = "mfrc"
 type = "normal"
 mode = "full"
 
-#load original and alt prompt results
+#load predictions
 original_path = paste(evals_dir, paste("gpt", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
 ```
 
@@ -51,37 +51,45 @@ df$age <- as.numeric(gsub("([0-9]+).*$", "\\1", df$age))
 ## Models
 
 ```{r}
-lm_general <- glm(as.factor(success) ~ annotator, data = df, 
-                  family = 'binomial')
-
+# demographics
 lm_demo <- glm(as.factor(success) ~ sex + age + religion, 
                data = df, family = 'binomial')
 
+#morals
 lm_mfq <- glm(as.factor(success) ~ care + equality + proportionality + 
                 loyalty + authority + purity, data = df, family = 'binomial')
 
 ############## psych
 
+#personality
 lm_psycho <- glm(as.factor(success) ~ open.mindedness + conscientiousness + 
                    agreeableness + extraversion + 
                    agreeableness + negative.emotionality, 
                  data = df, family = 'binomial')
+
+# creativity
 lm_creative <- glm(as.factor(success) ~ open.mindedness + creative.imagination + 
                    aesthetic.sensitivity + intellectual.curiosity,
                  data = df, family = 'binomial')
+
+#mental health
 lm_mental <- glm(as.factor(success) ~ anxiety + depression + 
                    emotional.volatility,
                  data = df, family = 'binomial')
 
 
 ############# social factors
+
+#politics
 lm_social <- glm(as.factor(success) ~ collectivism + individualism + 
                    tightness + social_conservatism + 
                    economical_conservatism, data = df, family = 'binomial')
 
+#interpersonal virtues
 lm_kindness <- glm(as.factor(success) ~ compassion + trust + 
                      respectfulness, data = df, family = 'binomial')
 
+#productivity
 lm_productive <- glm(as.factor(success) ~ productiveness + organization + 
                        responsibility, data = df, family = 'binomial')
 ```
@@ -90,8 +98,6 @@ lm_productive <- glm(as.factor(success) ~ productiveness + organization +
 ## Evaluate
 
 ```{r}
-summary(lm_general)
-
 summary(lm_demo)
 coef = (round(exp(tidy(lm_demo)$estimate), 2) - 1)*100
 p = round(tidy(lm_demo)$p.value, 3)

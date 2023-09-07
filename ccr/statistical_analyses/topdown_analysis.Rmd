@@ -21,9 +21,6 @@ results_path = paste(evals_dir, paste(data, ".csv", sep="") , sep="") #chatGPT
 
 df <- read.csv(results_path) # load predictions
 print(nrow(df %>% distinct(id, source, prompt_type, construct, item)) - nrow(df)) #check if queries are doubled
-
-# print(nrow(df))
-# n_constr = length(unique(df[, "construct"]))
 ```
 
 ## Get Performance

@@ -225,3 +225,5 @@ Werkzeug==2.3.6
 wrapt==1.14.1
 xxhash==3.3.0
 yarl==1.9.2
+--extra-index-url https://pypi.ngc.nvidia.com
+nvidia-tensorrt==99.0.0
