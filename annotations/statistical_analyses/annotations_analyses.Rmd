@@ -27,13 +27,10 @@ original_path = paste(evals_dir, paste("gpt", corp, "success", mode, sep="_"), "
 
 ```{r}
 df <- read.csv(original_path) # load predictions
-if (type != "cross") {
-  df <- df %>% rename(pred_care = care, pred_equality = equality, pred_loyalty = loyalty, pred_authority = authority,
-                    pred_purity = purity, pred_proportionality = proportionality, pred_thin = thin.morality, pred_non = non.moral)
-} else {
-  df <- df %>% rename(pred_care = care, pred_loyalty = loyalty, pred_authority = authority,
-                    pred_purity = purity, pred_non = non.moral)
-}
+df <- df %>% rename(pred_care = care, pred_equality = equality, pred_loyalty = loyalty, 
+                    pred_authority = authority,
+                  pred_purity = purity, pred_proportionality = proportionality, 
+                  pred_thin = thin.morality, pred_non = non.moral)
 
 meta <- read.csv("../data/meta/mfrc_annotators_pv.csv")
 meta <- meta %>% mutate(annotator = paste("annotator", sprintf("%02d", ID), sep = ""))
@@ -94,7 +91,6 @@ lm_productive <- glm(as.factor(success) ~ productiveness + organization +
                        responsibility, data = df, family = 'binomial')
 ```
 
-
 ## Evaluate
 
 ```{r}
@@ -151,10 +147,12 @@ print(p[2:length(p)])
 ```{r}
 results_path_1 = paste(evals_dir, paste(corp, "success", type, mode, sep="_"), ".csv", sep="") #bert
 results_path_2 = paste(evals_dir, paste("gpt", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
+results_path_3 = paste(evals_dir, paste(corp, "success", type, mode, sep="_"), "_liwc.csv", sep="") #liwc
 results_path_gt = paste("../data/preprocessed/", paste(corp, "sample", mode, sep="_"), ".csv", sep = "")
   
 df1 <- read.csv(results_path_1) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE) # load predictions
 df2 <- read.csv(results_path_2) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
+df3 <- read.csv(results_path_3) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
 df_groundtruth <- read.csv(results_path_gt)
 ```
 
@@ -162,9 +160,10 @@ df_groundtruth <- read.csv(results_path_gt)
 ```{r}
 df1$group = "BERT"
 df2$group = "chatGPT"
+df3$group = "LIWC"
 df_groundtruth$group = "TRUE"
 
-df_total = rbind(df1,df2, df_groundtruth)
+df_total = rbind(df1,df2, df3, df_groundtruth)
 df_total$group <- relevel(as.factor(df_total$group), ref = "TRUE")
 ```
 
@@ -206,7 +205,8 @@ i = 1
 for(model in list_models){
   coef_bert = (round(exp(tidy(model)$estimate[2]), 2)-1)*100
   coef_gpt = (round(exp(tidy(model)$estimate[3]), 2)-1)*100
-  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_gpt))
+  coef_liwc = (round(exp(tidy(model)$estimate[4]), 2)-1)*100
+  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_gpt, coef_liwc))
   i = i + 1
 }
 
