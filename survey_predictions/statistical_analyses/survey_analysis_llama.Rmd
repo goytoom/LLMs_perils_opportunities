@@ -26,7 +26,7 @@ library(AMR)
 ### Set dataset to investigate here:
 ```{r}
 rm(list = ls()) #remove all variables before analysis
-data = "bigfive" # change for all respective surveys
+data = "rwa" # change for all respective surveys
 ```
 
 ### Load specified data
@@ -278,7 +278,7 @@ groupComparisons <- function(df, varnames){
     
     print(t1)
     
-    ggsave(filename = paste("../results/plots/llama/", data, "_", varname, "_llama.png", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='png')
+    ggsave(filename = paste("../results/plots/llama/", data, "_", varname, "_llama.pdf", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='pdf')
     
     print("---------------------------------------------------")
     }else{

@@ -285,7 +285,7 @@ t1 <- ggplot(df_comparison, aes(x = construct, y = value, fill = group)) +
     
     print(t1)
     
-    ggsave(filename = paste("../results/plots/", data, "_prompting.png", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='png')
+    ggsave(filename = paste("../results/plots/", data, "_prompting.pdf", sep=""), t1, width = 8, height = 4, dpi = 150, units = "in", device='pdf')
 ```
 
 
