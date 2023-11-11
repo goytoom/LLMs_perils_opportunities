@@ -167,7 +167,7 @@ df_total = rbind(df1,df2, df_groundtruth)
 df_total$group <- relevel(as.factor(df_total$group), ref = "TRUE")
 ```
 
-## Fit Model (moral foundation ~ predictor)
+## Fit Model (regress predicted moral sentiment over type of model/humans)
 ```{r}
 lm_care <- glm(care ~ group, data = df_total, family = "binomial")
 summary(lm_care)
@@ -211,7 +211,10 @@ for(model in list_models){
 
 df_coefs = as.data.frame(matrix(unlist(coefList), nrow=length(unlist(coefList[1]))))
 colnames(df_coefs) = list_names
+model_names <- c("BERT", "zeroshot-GPT", "fewshot-GPT", "finetuned-GPT", "LIWC")
+df_coefs <- cbind("model name" = model_names, df_coefs)
 
+# order: bert, zeroshot-gpt, fewshot-gpt, finetuned-gpt, liwc
 df_coefs
 ```
 

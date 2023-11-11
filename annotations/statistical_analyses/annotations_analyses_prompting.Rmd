@@ -178,7 +178,7 @@ df_total = rbind(df1,df2)
 df_total$group <- relevel(as.factor(df_total$group), ref = "chatGPT1")
 ```
 
-## Fit Model (moral foundation ~ predictor)
+## Fit Model (regress predicted moral sentiment over type of model/humans)
 ```{r}
 lm_care <- glm(care ~ group, data = df_total, family = "binomial")
 summary(lm_care)

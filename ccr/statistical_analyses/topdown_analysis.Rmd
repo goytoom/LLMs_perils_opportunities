@@ -34,7 +34,7 @@ names(df_scores_all)[names(df_scores_all) == 'X'] <- 'model'
 ```
 
 
-### GPT item-level models (using responses from CCR style prompts) -- Values essays
+### GPT item-level models (using responses from CCR style prompts) -- from Values essays
 ```{r}
 #reformat data sets from long to wide for each construct separately
 #only use responses from CCR style prompt
@@ -61,6 +61,7 @@ df_ccr_tr = df_results %>% filter(construct=="PVQ_TR_tot" & prompt_type=="hybrid
 df_ccr_he = df_results %>% filter(construct=="PVQ_HE_tot" & prompt_type=="hybrid" & source=="values") %>% spread(key = "item", value = "prediction_clean")
 df_ccr_be = df_results %>% filter(construct=="PVQ_BE_tot" & prompt_type=="hybrid" & source=="values") %>% spread(key = "item", value = "prediction_clean")
 
+### Models
 gpt_ccr_cons_lm <- lm(response ~ item_1 + item_2, df_ccr_cons)
 gpt_ccr_indi_lm <- lm(response ~ item_1 + item_2 + item_3 + item_4 + item_5 + item_6, df_ccr_indi)
 gpt_ccr_reli_lm <- lm(response ~ item_1 + item_2 + item_3 + item_4 + item_5,          df_ccr_reli)
@@ -115,6 +116,7 @@ gpt_ccr_tr_summary= summary(gpt_ccr_tr_lm)
 gpt_ccr_he_summary = summary(gpt_ccr_he_lm)
 gpt_ccr_be_summary = summary(gpt_ccr_be_lm)
 
+### Save model performances
 scores_gpt_ccr_values = c(gpt_ccr_tigh_summary$r.squared, gpt_ccr_indi_summary$r.squared,
                           gpt_ccr_coll_summary$r.squared, gpt_ccr_nfc_summary$r.squared,
                           gpt_ccr_cons_summary$r.squared, gpt_ccr_reli_summary$r.squared,
@@ -135,7 +137,7 @@ df_scores_gpt_ccr_values = cbind(model = "gpt_ccr", df_scores_gpt_ccr_values)
 ```
 
 
-### GPT item-level models (CCR style prompts) -- Everyday essays
+### GPT item-level models (CCR style prompts) -- from Everyday essays
 ```{r}
 #reformat data sets from long to wide for each construct separately
 #only use responses from CCR style prompt
@@ -162,6 +164,7 @@ df_ccr_tr = df_results %>% filter(construct=="PVQ_TR_tot" & prompt_type=="hybrid
 df_ccr_he = df_results %>% filter(construct=="PVQ_HE_tot" & prompt_type=="hybrid" & source=="behaviors") %>% spread(key = "item", value = "prediction_clean")
 df_ccr_be = df_results %>% filter(construct=="PVQ_BE_tot" & prompt_type=="hybrid" & source=="behaviors") %>% spread(key = "item", value = "prediction_clean")
 
+### Models
 gpt_ccr_cons_lm <- lm(response ~ item_1 + item_2, df_ccr_cons)
 gpt_ccr_indi_lm <- lm(response ~ item_1 + item_2 + item_3 + item_4 + item_5 + item_6, df_ccr_indi)
 gpt_ccr_reli_lm <- lm(response ~ item_1 + item_2 + item_3 + item_4 + item_5,          df_ccr_reli)
@@ -216,6 +219,7 @@ gpt_ccr_tr_summary= summary(gpt_ccr_tr_lm)
 gpt_ccr_he_summary = summary(gpt_ccr_he_lm)
 gpt_ccr_be_summary = summary(gpt_ccr_be_lm)
 
+### Save model performances
 scores_gpt_ccr_behaviors = c(gpt_ccr_tigh_summary$r.squared,gpt_ccr_indi_summary$r.squared,
                           gpt_ccr_coll_summary$r.squared, gpt_ccr_nfc_summary$r.squared,
                           gpt_ccr_cons_summary$r.squared, gpt_ccr_reli_summary$r.squared,
@@ -230,6 +234,7 @@ scores_gpt_ccr_behaviors = c(gpt_ccr_tigh_summary$r.squared,gpt_ccr_indi_summary
 
 names(scores_gpt_ccr_behaviors) <- colnames(df_scores_all)[3:length(colnames(df_scores_all))]
 
+### reformat and add columns for essay type and model name
 df_scores_gpt_ccr_behaviors <- as.data.frame(t(data.frame(scores_gpt_ccr_behaviors)))
 df_scores_gpt_ccr_behaviors = cbind(source = "behaviors", df_scores_gpt_ccr_behaviors)
 df_scores_gpt_ccr_behaviors = cbind(model = "gpt_ccr", df_scores_gpt_ccr_behaviors)
@@ -262,6 +267,7 @@ df_tot_tr = df_results %>% filter(construct=="PVQ_TR_tot" & prompt_type=="genera
 df_tot_he = df_results %>% filter(construct=="PVQ_HE_tot" & prompt_type=="general" & source=="values") %>% spread(key = "item", value = "prediction_clean")
 df_tot_be = df_results %>% filter(construct=="PVQ_BE_tot" & prompt_type=="general" & source=="values") %>% spread(key = "item", value = "prediction_clean")
 
+### Models
 gpt_tot_cons_lm <- lm(response ~ total, df_tot_cons)
 gpt_tot_indi_lm <- lm(response ~ total, df_tot_indi)
 gpt_tot_reli_lm <- lm(response ~ total, df_tot_reli)
@@ -316,6 +322,7 @@ gpt_tot_tr_summary= summary(gpt_tot_tr_lm)
 gpt_tot_he_summary = summary(gpt_tot_he_lm)
 gpt_tot_be_summary = summary(gpt_tot_be_lm)
 
+### Save model performances
 scores_gpt_tot_values = c(gpt_tot_tigh_summary$r.squared,gpt_tot_indi_summary$r.squared,
                           gpt_tot_coll_summary$r.squared, gpt_tot_nfc_summary$r.squared,
                           gpt_tot_cons_summary$r.squared, gpt_tot_reli_summary$r.squared,
@@ -330,6 +337,7 @@ scores_gpt_tot_values = c(gpt_tot_tigh_summary$r.squared,gpt_tot_indi_summary$r.
 
 names(scores_gpt_tot_values) <- colnames(df_scores_all)[3:length(colnames(df_scores_all))]
 
+### reformat and add columns for essay type and model name
 df_scores_gpt_tot_values <- as.data.frame(t(data.frame(scores_gpt_tot_values)))
 df_scores_gpt_tot_values <- cbind(source = "values", df_scores_gpt_tot_values)
 df_scores_gpt_tot_values <- cbind(model = "gpt", df_scores_gpt_tot_values)
@@ -361,6 +369,7 @@ df_tot_tr = df_results %>% filter(construct=="PVQ_TR_tot" & prompt_type=="genera
 df_tot_he = df_results %>% filter(construct=="PVQ_HE_tot" & prompt_type=="general" & source=="behaviors") %>% spread(key = "item", value = "prediction_clean")
 df_tot_be = df_results %>% filter(construct=="PVQ_BE_tot" & prompt_type=="general" & source=="behaviors") %>% spread(key = "item", value = "prediction_clean")
 
+### Models
 gpt_tot_cons_lm <- lm(response ~ total, df_tot_cons)
 gpt_tot_indi_lm <- lm(response ~ total, df_tot_indi)
 gpt_tot_reli_lm <- lm(response ~ total, df_tot_reli)
@@ -415,6 +424,7 @@ gpt_tot_tr_summary= summary(gpt_tot_tr_lm)
 gpt_tot_he_summary = summary(gpt_tot_he_lm)
 gpt_tot_be_summary = summary(gpt_tot_be_lm)
 
+### Save model performances
 scores_gpt_tot_behaviors = c(gpt_tot_tigh_summary$r.squared,gpt_tot_indi_summary$r.squared,
                           gpt_tot_coll_summary$r.squared, gpt_tot_nfc_summary$r.squared,
                           gpt_tot_cons_summary$r.squared, gpt_tot_reli_summary$r.squared,
@@ -429,6 +439,7 @@ scores_gpt_tot_behaviors = c(gpt_tot_tigh_summary$r.squared,gpt_tot_indi_summary
 
 names(scores_gpt_tot_behaviors) <- colnames(df_scores_all)[3:length(colnames(df_scores_all))]
 
+### reformat and add columns for essay type and model name
 df_scores_gpt_tot_behaviors <- as.data.frame(t(data.frame(scores_gpt_tot_behaviors)))
 df_scores_gpt_tot_behaviors = cbind(source = "behaviors", df_scores_gpt_tot_behaviors)
 df_scores_gpt_tot_behaviors = cbind(model = "gpt", df_scores_gpt_tot_behaviors)
@@ -463,32 +474,32 @@ print(DunnettTest(f, data = df_scores_final_behav, control = "ccr")) # test for 
 
 ```{r}
 # Behaviors
-#vs gpt
+# CCR vs gpt
 t.test(df_scores_final_behav[df_scores_final_behav$model=="ccr", "r2"], df_scores_final_behav[df_scores_final_behav$model=="gpt", "r2"], alternative = "two.sided")
 
-#vs gpt_ccr
+# CCR vs gpt_ccr
 t.test(df_scores_final_behav[df_scores_final_behav$model=="ccr", "r2"], df_scores_final_behav[df_scores_final_behav$model=="gpt_ccr", "r2"], alternative = "two.sided")
 ```
 
 
 ### Correlation of model performances
 ```{r}
-# Values
-#vs gpt
+# Values Essay
+#Test CCR vs gpt
 cor.test(df_scores_final_value[df_scores_final_value$model=="ccr", "r2"], df_scores_final_value[df_scores_final_value$model=="gpt", "r2"], alternative = "two.sided")
 
-#vs gpt_ccr
+#Test CCR vs gpt
 cor.test(df_scores_final_value[df_scores_final_value$model=="ccr", "r2"], df_scores_final_value[df_scores_final_value$model=="gpt_ccr", "r2"], alternative = "two.sided")
 ```
 
 
 
 ```{r}
-# Behaviors
-#vs gpt
+# Behaviors Esssay
+# CCR vs gpt
 cor.test(df_scores_final_behav[df_scores_final_behav$model=="ccr", "r2"], df_scores_final_behav[df_scores_final_behav$model=="gpt", "r2"], alternative = "two.sided")
 
-#vs gpt_ccr
+# CCR vs gpt_ccr
 cor.test(df_scores_final_behav[df_scores_final_behav$model=="ccr", "r2"], df_scores_final_behav[df_scores_final_behav$model=="gpt_ccr", "r2"], alternative = "two.sided")
 ```
 
@@ -516,6 +527,22 @@ v_plot
 ggsave("../results/plots/r2_values.pdf", v_plot, height = 4, width=6, dpi = 150, device = "pdf")
 ```
 
+```{r}
+### Alternative barplot
+# aggregate_data <- aggregate(r2 ~ construct + model, df_scores_final_value, mean)
+# 
+# v_plot <- ggplot(aggregate_data, aes(x = construct, y = r2, fill = model)) + 
+#   geom_bar(stat = "identity", position = position_dodge()) +
+#   geom_errorbar(aes(ymin = r2 - ci_ccr_values[1], ymax = r2 + ci_ccr_values[2]), width = .2, position = position_dodge(.9)) +
+#   scale_fill_discrete(name="Method", breaks=c("ccr", "gpt", "gpt_ccr"),
+#                       labels=c("CCR", "GPT (construct-level)", "GPT (item-level)")) +
+#   labs(x = "Constructs", y = "Variance Explained (%)") +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# v_plot
+```
+
+
 
 #### Everyday essays
 ```{r}
@@ -530,7 +557,7 @@ mean_gpt_ccr_behaviors <- t.test(df_scores_final_behav[df_scores_final_behav$mod
 ci_gpt_ccr_behaviors <- t.test(df_scores_final_behav[df_scores_final_behav$model=="gpt_ccr", "r2"])$conf.int
 
 ###### Plots
-v_plot <- ggplot(df_scores_final_value, aes(x=construct,y=r2, color=model)) + geom_point() + theme_bw() + scale_color_discrete(name="Method", breaks=c("ccr", "gpt", "gpt_ccr"),
+v_plot <- ggplot(df_scores_final_behav, aes(x=construct,y=r2, color=model)) + geom_point() + theme_bw() + scale_color_discrete(name="Method", breaks=c("ccr", "gpt", "gpt_ccr"),
                          labels=c("CCR", "GPT (construct-level)", "GPT (item-level)")) +
   xlab("") + ylab("Variance explained (%)") + geom_hline(aes(yintercept = mean_ccr_behaviors),color="red", linetype = "dashed") + geom_hline(aes(yintercept = mean_gpt_behaviors),color="forestgreen", linetype = "dashed") + geom_hline(aes(yintercept = mean_gpt_ccr_behaviors),color="steelblue3", linetype = "dashed") + geom_rect(aes(ymin=ci_ccr_behaviors[1], ymax=ci_ccr_behaviors[2],xmin=-Inf,xmax=Inf), fill='firebrick', color=NA, alpha= 0.005) + geom_rect(aes(ymin=ci_gpt_behaviors[1], ymax=ci_gpt_behaviors[2],xmin=-Inf,xmax=Inf), fill='forestgreen', color=NA, alpha= 0.005) + geom_rect(aes(ymin=ci_gpt_ccr_behaviors[1], ymax=ci_gpt_ccr_behaviors[2],xmin=-Inf,xmax=Inf), fill='steelblue3', color=NA, alpha= 0.005) + coord_flip()
 
@@ -538,6 +565,22 @@ v_plot
 
 ggsave("../results/plots/r2_behaviors.pdf", v_plot, height = 4, width=6, dpi = 150, device = "pdf")
 ```
+
+```{r}
+# ## Alternative barplot
+# aggregate_data <- aggregate(r2 ~ construct + model, df_scores_final_behav, mean)
+# 
+# v_plot <- ggplot(aggregate_data, aes(x = construct, y = r2, fill = model)) +
+#   geom_bar(stat = "identity", position = position_dodge()) +
+#   geom_errorbar(aes(ymin = r2 - ci_ccr_values[1], ymax = r2 + ci_ccr_values[2]), width = .2, position = position_dodge(.9)) +
+#   scale_fill_discrete(name="Method", breaks=c("ccr", "gpt", "gpt_ccr"),
+#                       labels=c("CCR", "GPT (construct-level)", "GPT (item-level)")) +
+#   labs(x = "Constructs", y = "Variance Explained (%)") +
+#   theme_bw() +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+# v_plot
+```
+
 
 
 

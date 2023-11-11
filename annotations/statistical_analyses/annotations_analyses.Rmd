@@ -36,7 +36,7 @@ meta <- read.csv("../data/meta/mfrc_annotators_pv.csv")
 meta <- meta %>% mutate(annotator = paste("annotator", sprintf("%02d", ID), sep = ""))
 # preprocess meta data (age to numeric, etc.)
 
-df <- merge(df, meta, by = "annotator")
+df <- merge(df, meta, by = "annotator") #merge dataset with annotator information
 ```
 
 ## Process Data
@@ -46,7 +46,7 @@ df$age <- as.numeric(gsub("([0-9]+).*$", "\\1", df$age))
 ```
 
 ## Models
-
+Train linear models for each type of bias
 ```{r}
 # demographics
 lm_demo <- glm(as.factor(success) ~ sex + age + religion, 
@@ -92,7 +92,7 @@ lm_productive <- glm(as.factor(success) ~ productiveness + organization +
 ```
 
 ## Evaluate
-
+Show summaries for each type of bias and extract coefficients
 ```{r}
 summary(lm_demo)
 coef = (round(exp(tidy(lm_demo)$estimate), 2) - 1)*100
@@ -112,6 +112,12 @@ p = round(tidy(lm_psycho)$p.value, 3)
 print(coef[2:length(coef)])
 print(p[2:length(p)])
 
+summary(lm_social)
+coef = (round(exp(tidy(lm_social)$estimate), 2) - 1)*100
+p = round(tidy(lm_social)$p.value, 3)
+print(coef[2:length(coef)])
+print(p[2:length(p)])
+
 summary(lm_creative)
 coef = (round(exp(tidy(lm_creative)$estimate), 2) - 1)*100
 p = round(tidy(lm_creative)$p.value, 3)
@@ -121,12 +127,6 @@ print(p[2:length(p)])
 summary(lm_mental)
 coef = (round(exp(tidy(lm_mental)$estimate), 2) - 1)*100
 p = round(tidy(lm_mental)$p.value, 3)
-print(coef[2:length(coef)])
-print(p[2:length(p)])
-
-summary(lm_social)
-coef = (round(exp(tidy(lm_social)$estimate), 2) - 1)*100
-p = round(tidy(lm_social)$p.value, 3)
 print(coef[2:length(coef)])
 print(p[2:length(p)])
 
@@ -148,11 +148,15 @@ print(p[2:length(p)])
 results_path_1 = paste(evals_dir, paste(corp, "success", type, mode, sep="_"), ".csv", sep="") #bert
 results_path_2 = paste(evals_dir, paste("gpt", corp, "success", mode, sep="_"), ".csv", sep="") #chatGPT
 results_path_3 = paste(evals_dir, paste(corp, "success", type, mode, sep="_"), "_liwc.csv", sep="") #liwc
-results_path_gt = paste("../data/preprocessed/", paste(corp, "sample", mode, sep="_"), ".csv", sep = "")
+results_path_4 = paste(evals_dir, paste("gpt_fewshot", corp, "success", mode, sep="_"), ".csv", sep="") #fewshot
+results_path_5 = paste(evals_dir, paste("gpt_FT", corp, "success", mode, sep="_"), ".csv", sep="") #finetuned
+results_path_gt = paste("../data/preprocessed/", paste(corp, "sample", mode, sep="_"), ".csv", sep = "") # humans
   
 df1 <- read.csv(results_path_1) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE) # load predictions
 df2 <- read.csv(results_path_2) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
 df3 <- read.csv(results_path_3) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
+df4 <- read.csv(results_path_4) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
+df5 <- read.csv(results_path_5) %>% select(-success, -annotator, -annotation) %>% distinct(.keep_all = TRUE)# load predictions
 df_groundtruth <- read.csv(results_path_gt)
 ```
 
@@ -161,13 +165,15 @@ df_groundtruth <- read.csv(results_path_gt)
 df1$group = "BERT"
 df2$group = "chatGPT"
 df3$group = "LIWC"
+df4$group = "chatGPT-FEW"
+df5$group = "chatGPT-FT"
 df_groundtruth$group = "TRUE"
 
-df_total = rbind(df1,df2, df3, df_groundtruth)
+df_total = rbind(df1,df2, df3, df4, df5, df_groundtruth)
 df_total$group <- relevel(as.factor(df_total$group), ref = "TRUE")
 ```
 
-## Fit Model (moral foundation ~ predictor)
+## Fit Model (regress predicted moral sentiment over type of model/humans)
 ```{r}
 lm_care <- glm(care ~ group, data = df_total, family = "binomial")
 summary(lm_care)
@@ -205,14 +211,19 @@ i = 1
 for(model in list_models){
   coef_bert = (round(exp(tidy(model)$estimate[2]), 2)-1)*100
   coef_gpt = (round(exp(tidy(model)$estimate[3]), 2)-1)*100
-  coef_liwc = (round(exp(tidy(model)$estimate[4]), 2)-1)*100
-  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_gpt, coef_liwc))
+  coef_gpt_few = (round(exp(tidy(model)$estimate[4]), 2)-1)*100
+  coef_gpt_ft = (round(exp(tidy(model)$estimate[5]), 2)-1)*100
+  coef_liwc = (round(exp(tidy(model)$estimate[6]), 2)-1)*100
+  coefList[[length(coefList)+1]] = list(c(coef_bert, coef_liwc, coef_gpt, coef_gpt_few, coef_gpt_ft))
   i = i + 1
 }
 
 df_coefs = as.data.frame(matrix(unlist(coefList), nrow=length(unlist(coefList[1]))))
 colnames(df_coefs) = list_names
+model_names <- c("BERT", "zeroshot-GPT", "fewshot-GPT", "finetuned-GPT", "LIWC")
+df_coefs <- cbind("model name" = model_names, df_coefs)
 
+# order: bert, zeroshot-gpt, fewshot-gpt, finetuned-gpt, liwc
 df_coefs
 ```
 
