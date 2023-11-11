@@ -1,5 +1,5 @@
-# Against GPTology
-This is the repositoy for the "Against GPTology" project. All code and data necessary to replicate the analysis in the paper are presented here.
+# Introduction
+This is the repositoy for "Perils and Opportunities in Using Large Language Models in Psychological Research". All code and data necessary to replicate the analysis in the paper are presented here.
 
 ## General Setup / First Step
 1. In a terminal execute the command `conda env create --file=textgen.yaml`. This creates a conda environment and installs the necessary packages to execute all codebooks. 
