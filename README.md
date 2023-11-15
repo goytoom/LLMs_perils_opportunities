@@ -7,7 +7,7 @@ This is the repositoy for "Perils and Opportunities in Using Large Language Mode
 3. Install the required packages using `pip install -r requirements.txt`
 4. If the cuda-toolkit could not be directly installed from the `requirements.txt`, run `pip install nvidia-cudnn-cu11==8.6.0.163` to force an update.
 5. You might have to link tensorRT using: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/anaconda3/envs/textgen/lib/python3.10/site-packages/tensorrt-libs/` or where your python libs are saved. (tensorRT is optional but might increase inference speed)
-6. Add your openAI key to your environment before running the ChatGPT files: `setx OPENAI_API_KEY “<yourkey>”` (windows), `echo "export OPENAI_API_KEY='yourkey'" >> ~/.zshrc` and `source ~/.zshrc` (linux/mac)
+6. Add your OpenAI API key to your environment before running the ChatGPT files: `setx OPENAI_API_KEY “<yourkey>”` (windows), `echo "export OPENAI_API_KEY='yourkey'" >> ~/.zshrc` and `source ~/.zshrc` (linux/mac)
 
 ## Text Annotations
 ### Preparation
