@@ -37,6 +37,14 @@ Sample the test data from the MFRC:
      - If you use the command line, the arguments for training are "mfrc", "full", "normal" (corpus, aggregate level for moral values, training type)
      - If you want to optimize the model paramters (e.g., add classification layers, change the bert model, etc), you can train using "eval" instead of "normal", which will return a cross-validated performance on the training data. In that case you also need to specify the threshold for classifying a text as a containing a moral sentiment (between 0-1).
 
+### LIWC
+1. We provide the embedded texts for training in `../data/preprocessed/mfrc_train_full_liwc.csv` and for testing in ../data/preprocessed/mfrc_sample_full_liwc.csv`
+	- To create LIWC embeddings from text files, you will need a LIWC license and the respective toolkit from: https://www.liwc.app
+3. Open and run all cells in `annotations/train_bert_model/train_LIWC.ipynb` to train the LIWC based model
+4. Open and run all cells in `annotations/train_bert_model/predict_LIWC.ipynb` to annotate the test data
+5. Open and run all cells in `annotaitons/train_bert_model/LIWC_performance.ipynb` to calculate the annotation performance (F1 score)
+
+
 ### ChatGPT
 1. Open `annotations/codes/chatGPT_annotations.ipynb`
      - THIS WILL CHARGE YOUR ACCOUNT!
