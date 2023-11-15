@@ -72,7 +72,7 @@ Sample the test data from the MFRC:
 1. Open `survey_predictions/code/prepare_data_gpt.ipynb` and run all cells. This will create a `data/processed/SURVEY_cleaned.csv` file for each survey in the `data/surveys` folder. In our data, some information was not collected for all participants so we filter for those participants who responded to the items of interests. *If you apply this pipeline on your own data this step will likely not be necessary or you will have to specify different items of interest in the `COLS_META` variable.*
     - The code will also generate the prompts under `data/prompts/SURVEY.pkl` for each survey. The prompts is generated from the `PROMPT_TEXT` variables and the item texts. *If you use different surveys, make sure to adjust `PROMPT_TEXT` to the respective response scales.*
 
-2. Open `survey_predictions/code/run_prompts_gpt.ipynb` and add your openai API key to the respective variable.
+2. Open `survey_predictions/code/run_prompts_gpt.ipynb`
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
 3. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
 
@@ -86,7 +86,7 @@ Sample the test data from the MFRC:
 
 ## Prompt Sensitivity
 ### Text Annotations
-1. Open `annotations/codes/chatGPT_annotations_ALT.ipynb`, and add your openai API key in `openai.api_key = "" #add your openai key here`. This will allow you to use the API to request ChatGPT responses to our prompts.
+1. Open `annotations/codes/chatGPT_annotations_ALT.ipynb`
      - THIS WILL CHARGE YOUR ACCOUNT!
      - Make sure that you know the prices before running (check https://openai.com/pricing)
 
@@ -106,7 +106,7 @@ Sample the test data from the MFRC:
 1. Open `survey_predictions/code/prepare_data_gpt.ipynb` and run all cells. This will create a `data/processed/SURVEY_cleaned.csv` file for each survey in the `data/surveys` folder. In our data, some information was not collected for all participants so we filter for those participants who responded to the items of interests. *If you apply this pipeline on your own data this step will likely not be necessary or you will have to specify different items of interest in the `COLS_META` variable.*
     - The code will also generate the prompts under `data/prompts/SURVEY.pkl` for each survey. The prompts are generated from the `PROMPT_TEXT` variables and the item texts. *If you use different surveys, make sure to adjust `PROMPT_TEXT` to the respective response scales.*
 
-2. Open `survey_predictions/code/run_prompts_gpt.ipynb` and add your openai API key to the respective variable.
+2. Open `survey_predictions/code/run_prompts_gpt.ipynb`
     - Specify, which surveys to run in `d_list` (list the names of all surveys from `data/surveys` that you want to collect responses from). The default are the surveys we ran in our study. 
 3. Run all cells. This will generate the ChatGPT responses and save them under `results/SURVEY.csv` for each SURVEY
 
@@ -125,7 +125,7 @@ Sample the test data from the MFRC:
 - Under "model loader" choose "ExLLama" and click on load. This will load the model so that our python script can process the prompts
 
 ### Text Annotations
-1. Open `annotations/codes/llama_annotations.ipynb`, and add your openai API key in `openai.api_key = "" #add your openai key here`. This will allow you to use the API to request ChatGPT responses to our prompts.
+1. Open `annotations/codes/llama_annotations.ipynb`
      - THIS WILL CHARGE YOUR ACCOUNT!
      - Make sure that you know the prices before running (check https://openai.com/pricing)
 
@@ -158,7 +158,7 @@ Sample the test data from the MFRC:
 2. Repeat this for any survey you are investigating (in our paper: bigfive, closure, cognition, rwa, systems_feelings; change variable `d = ` to these values).
 
 ## Comparison with top-down methods
-1. Open `ccr/code/chatGPT_predictions.ipynb` and add your openai API key to the respective variable.
+1. Open `ccr/code/chatGPT_predictions.ipynb`
 2. Run all cells:
      - This will save the ChatGPT predictions under `results/predictions/gpt_topdown.csv`
    
