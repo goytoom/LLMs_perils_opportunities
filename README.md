@@ -7,6 +7,7 @@ This is the repositoy for "Perils and Opportunities in Using Large Language Mode
 3. Install the required packages using `pip install -r requirements.txt`
 4. If the cuda-toolkit could not be directly installed from the `requirements.txt`, run `pip install nvidia-cudnn-cu11==8.6.0.163` to force an update.
 5. You might have to link tensorRT using: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/anaconda3/envs/textgen/lib/python3.10/site-packages/tensorrt-libs/` or where your python libs are saved. (tensorRT is optional but might increase inference speed)
+6. Add your openAI key to your environment before running the ChatGPT files: `setx OPENAI_API_KEY “<yourkey>”` (windows), `echo "export OPENAI_API_KEY='yourkey'" >> ~/.zshrc` and `source ~/.zshrc` (linux/mac)
 
 ## Text Annotations
 ### Preparation
@@ -37,12 +38,23 @@ Sample the test data from the MFRC:
      - If you want to optimize the model paramters (e.g., add classification layers, change the bert model, etc), you can train using "eval" instead of "normal", which will return a cross-validated performance on the training data. In that case you also need to specify the threshold for classifying a text as a containing a moral sentiment (between 0-1).
 
 ### ChatGPT
-1. Open `annotations/codes/chatGPT_annotations.ipynb`, and add your openai API key in `openai.api_key = "" #add your openai key here`. This will allow you to use the API to request ChatGPT responses to our prompts.
+1. Open `annotations/codes/chatGPT_annotations.ipynb`
      - THIS WILL CHARGE YOUR ACCOUNT!
      - Make sure that you know the prices before running (check https://openai.com/pricing)
-
 2. Run all cells:
      - This will save the ChatGPT annotations under `results/predictions/gpt_mfrc_labels_full.csv`
+
+3. Open `annotations/codes/chatGPT_annotations_Fewshot.ipynb` (repeat the analysis using fewshot learning instead of zeroshot)
+     - THIS WILL CHARGE YOUR ACCOUNT!
+     - Make sure that you know the prices before running (check https://openai.com/pricing)
+4. Run all cells:
+     - This will save the ChatGPT annotations under `results/predictions/gpt_fewshot_mfrc_labels_full.csv`
+  
+5. Open `annotations/codes/chatGPT_annotations_FT.ipynb` (finetune ChatGPT3.5 and repeat the analysis)
+     - THIS WILL CHARGE YOUR ACCOUNT!
+     - Make sure that you know the prices before running (check https://openai.com/pricing)
+6. Run all cells:
+     - This will save the ChatGPT annotations under `results/predictions/gpt_FT_mfrc_labels_full.csv`
   
 ### Statistical Anlysis
 1. Open `annotations/codes/chatGPT_performance.ipynb` and run all cells
