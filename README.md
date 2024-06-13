@@ -72,8 +72,8 @@ Sample the test data from the MFRC:
      - This will calculate the correct/false classifications for the BERT model, add the annotator demographic information and save it under `../results/evals/mfrc_success_normal_full.csv`.
 
 3. Open `annotations/statistical_analyses/annotations_analyses.Rmd` and run all cells
-     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
-     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
+     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Tables S4-S10 of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much the distribution of predicted classes deviates from the distribution of human annotated classes) and is shown in Table S2 of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
 
 ## Survey Responses
@@ -87,8 +87,7 @@ Sample the test data from the MFRC:
 ### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis.Rmd` and run all cells.
     - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
-    - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
-    - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
+    - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable its different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Tables S11-S20 and Figures S2-S29 of our paper.
 
 2. Repeat this for any survey you are investigating (in our paper: bigfive, closure, cognition, rwa, systems_feelings; change variable `d = ` to these values).
 
@@ -106,8 +105,8 @@ Sample the test data from the MFRC:
      - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/gpt_mfrc_success_full_ALT.csv`, one for each altered prompt.
 
 2. Open `annotations/statistical_analyses/annotations_analyses_prompting.Rmd` and run all cells
-     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
-     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
+     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds which express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much the distribution of predicted classes deviates from the distribution of human annotated classes) and is shown in Table S27 of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
   
 ### Survey Responses
@@ -121,12 +120,11 @@ Sample the test data from the MFRC:
 #### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis_prompting.Rmd` and run all cells.
     - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
-    - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
-    - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
+    - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Tables S28-S29 and Figure S30 of our paper.
 
 ## Open-Source Pipeline
 ### Preparation
-- Follow https://github.com/oobabooga/text-generation-webui to install the interface for LLaMa (either use the "one-click-installer" or manually install).
+- Follow https://github.com/oobabooga/text-generation-webui to install the interface for LLaMA2 (either use the "one-click-installer" or manually install).
 - Start the interface via terminal (activate the conda environment, enter the textgen directory, run `python server.py --api`).
 - In the interface, click on the "Model" tab. On the right pane, under "Download custom model or LoRA", enter "TheBloke/Luna-AI-Llama2-Uncensored-GPTQ:gptq-4bit-32g-actorder_True" and press download (this will download the model used in our studies.
 - After loading is completed, on the left pane under Model choose the model on the drop down menu.
@@ -138,15 +136,15 @@ Sample the test data from the MFRC:
      - Make sure that you know the prices before running (check https://openai.com/pricing)
 
 2. Run all cells:
-     - This will save the ChatGPT annotations under `results/predictions/llama2_mfrc_labels_full.csv`
+     - This will save the LLaMA2 annotations under `results/predictions/llama2_mfrc_labels_full.csv`
   
 #### Statistical Anlysis
 1. Open `annotations/codes/llama_performance.ipynb` and run all cells
      - This will calculate the correct/false classifications and add the annotator demographic information and save it under `../results/evals/llama2_mfrc_success_full.csv`.
 
 2. Open `annotations/statistical_analyses/annotations_analyses_llama.Rmd` and run all cells
-     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Table X of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
-     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much it over or underpredicts each moral sentiment) and is shown in Table X of our paper.
+     - The output of `## Evaluate` will show the logistic regression outputs for each set of annotator variables (e.g., demographics, moral values, etc). Under each regression output are the coefficients converted to percentage differences in odds. These results are presented in Tables S35-S42 of our work and express how each annotator characteristic is linked to the models predictions (i.e., how biased the classifier is towards said annotator characteristic).
+     - The output of `## Fit Model (moral foundation ~ predictor)` will show the logistic regression of predicting each set of moral sentiment as a function of Classifier (BERT, ChatGPT, LLaMA2, compared to humans). The results show how much more or less likely a Classifier predicts a class compared to trained human annotators (i.e., how much the distribution of predicted classes deviates from the distribution of human annotated classes) and is shown in Table S34 of our paper.
      - The output of `## Extract Coefficients` converts the coefficients above into percentage differences in odds (i.e., how much more in percent does a classifier predict a moral sentiment compared to trained humans).
 
 ### Survey Responses
@@ -159,9 +157,8 @@ Sample the test data from the MFRC:
 
 #### Statistical Analyses
 1. Open `statistical_analyses/survey_analysis_llama2.Rmd` and run all cells.
-    - This will calculate all group diffferences between humans and ChatGPT's survey responses, output the results as tables and save figures under `results/plots/`
-    - The output of `### Demographic Group Differences` shows the differences of ChatGPT's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable the different levels with ChatGPT (e.g., for political orientation it compares Liberals, Moderates, Conservatives against ChatGPT). The results of this analysis are shown in Table X and Figure Y of our paper.
-    - The output of `### Results` shows the regression of various human demographic variables on similarity to ChatGPT's survey responses. This expresses how much more similar ChatGPT is to a certain demographic group when responding to surveys. The results of this analysis are shown in Table X and of our paper.
+    - This will calculate all group diffferences between humans and LLaMA2's survey responses, output the results as tables and save figures under `results/plots/`
+    - The output of `### Demographic Group Differences` shows the differences of LLaMA2's survey responses and various demographic groups using Dunnett's Test. The test compares for each demographic variable its different levels with LLaMA2 (e.g., for political orientation it compares Liberals, Moderates, Conservatives against LLaMA2). The results of this analysis are shown in Tables S43-S51 and Figures S33-S60 of our paper.
 
 2. Repeat this for any survey you are investigating (in our paper: bigfive, closure, cognition, rwa, systems_feelings; change variable `d = ` to these values).
 
