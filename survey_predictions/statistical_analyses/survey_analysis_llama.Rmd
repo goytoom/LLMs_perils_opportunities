@@ -310,26 +310,6 @@ df_desc <- df_list[[1]]
 df_comparison <- df_list[[2]]
 ```
 
-### Inferential Analysis
-
-```{r}
-## potentially remove groups that have too few samples (for categorical variables)
-df_diff$political_opinion <- relevel(factor(df_diff$political_opinion), ref = "Conservative")
-df_diff$religion <- relevel(factor(df_diff$religion), ref = "Christianity")
-df_diff$race <- relevel(factor(df_diff$race), ref = "White")
-
-# test different models
-lm_demo_cnstr <- lm(cum_diff_cnstr ~ age + sex + political_opinion + religion + race, df_diff) 
-```
-
-### Results
-
-```{r}
-# variables reference at 0 not average
-summary(lm_demo_cnstr)
-```
-
-
 
 
 
